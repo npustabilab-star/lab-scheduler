@@ -15,12 +15,20 @@ describe('groupSlotsByWeek', () => {
     expect(g[0].cells).toEqual(new Set(['1-3', '3-5']))
     expect(g[1].weekStart).toBe('2026-03-16')
   })
-  it('sorts weeks ascending and handles Sunday-ish edges', () => {
+  it('sorts weeks ascending', () => {
     const g = groupSlotsByWeek([
       { date: '2026-03-16', period: 1 },
       { date: '2026-03-13', period: 2 },
     ])
     expect(g.map((x) => x.weekStart)).toEqual(['2026-03-09', '2026-03-16'])
+  })
+})
+
+describe('groupSlotsByWeek Sunday', () => {
+  it('puts Sunday in the preceding Monday week as isodow 7', () => {
+    const g = groupSlotsByWeek([{ date: '2026-03-15', period: 2 }])
+    expect(g[0].weekStart).toBe('2026-03-09')
+    expect(g[0].cells).toEqual(new Set(['7-2']))
   })
 })
 

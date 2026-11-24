@@ -20,7 +20,8 @@ export default function BookingPage() {
   const [bookings, setBookings] = useState<BookingRow[]>([])
   const [times, setTimes] = useState<PeriodTimes>({})
   const [weekIdx, setWeekIdx] = useState(0)
-  const [error, setError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [picked, setPicked] = useState<{ date: string; period: number } | null>(null)
   const [cancelling, setCancelling] = useState<BookingRow | null>(null)
   const busy = useRef(false)
@@ -45,9 +46,9 @@ export default function BookingPage() {
       setTimes(sp.times)
       setSlots(sl)
       setBookings((bk.data ?? []) as unknown as BookingRow[])
-      setError(null)
+      setLoadError(null)
     } catch (e) {
-      if (isCurrent()) setError(errMsg(e))
+      if (isCurrent()) setLoadError(errMsg(e))
     }
   }, [profile, beginLoad])
 
@@ -68,14 +69,14 @@ export default function BookingPage() {
   const act = async (fn: () => Promise<unknown>) => {
     if (busy.current) return
     busy.current = true
-    setError(null)
+    setActionError(null)
     try {
       await fn()
       setPicked(null)
       setCancelling(null)
       await load()
     } catch (e) {
-      setError(errMsg(e))
+      setActionError(errMsg(e))
       if (e instanceof AppError && e.code === 'SLOT_UNAVAILABLE') {
         setPicked(null)
         await load()
@@ -88,9 +89,14 @@ export default function BookingPage() {
   return (
     <div className="p-2">
       <h1 className="mb-2 text-xl font-bold">預約</h1>
-      {error && (
+      {loadError && (
         <p role="alert" className="mb-2 rounded bg-red-100 p-2 text-sm text-red-700">
-          {error}
+          {loadError}
+        </p>
+      )}
+      {actionError && (
+        <p role="alert" className="mb-2 rounded bg-red-100 p-2 text-sm text-red-700">
+          {actionError}
         </p>
       )}
       {active ? (

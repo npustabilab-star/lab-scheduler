@@ -18,7 +18,8 @@ export default function RequestsPage() {
   const { profile } = useAuth()
   const [bookings, setBookings] = useState<BookingRow[]>([])
   const [times, setTimes] = useState<PeriodTimes>({})
-  const [error, setError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [action, setAction] = useState<Action | null>(null)
   const busy = useRef(false)
   const beginLoad = useRef(createLatestOnly()).current
@@ -41,9 +42,9 @@ export default function RequestsPage() {
       if (bk.error) throw new Error(bk.error.message)
       setTimes(sp.times)
       setBookings((bk.data ?? []) as unknown as BookingRow[])
-      setError(null)
+      setLoadError(null)
     } catch (e) {
-      if (isCurrent()) setError(errMsg(e))
+      if (isCurrent()) setLoadError(errMsg(e))
     }
   }, [profile, beginLoad])
 
@@ -65,13 +66,13 @@ export default function RequestsPage() {
   const act = async (fn: () => Promise<unknown>) => {
     if (busy.current) return
     busy.current = true
-    setError(null)
+    setActionError(null)
     try {
       await fn()
       setAction(null)
       await load()
     } catch (e) {
-      setError(errMsg(e))
+      setActionError(errMsg(e))
       setAction(null)
       await load()
     } finally {
@@ -84,9 +85,14 @@ export default function RequestsPage() {
   return (
     <div className="p-2">
       <h1 className="mb-2 text-xl font-bold">預約申請</h1>
-      {error && (
+      {loadError && (
         <p role="alert" className="mb-2 rounded bg-red-100 p-2 text-sm text-red-700">
-          {error}
+          {loadError}
+        </p>
+      )}
+      {actionError && (
+        <p role="alert" className="mb-2 rounded bg-red-100 p-2 text-sm text-red-700">
+          {actionError}
         </p>
       )}
       <h2 className="mb-1 font-bold">待我確認</h2>
