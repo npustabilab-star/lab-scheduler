@@ -1,1 +1,10 @@
 @import "tailwindcss";
+
+/* Calendar */
+.fc .fc-bg-event.uncovered { background: #fecaca; opacity: 0.6; }
+.fc .fc-bg-event.no-class { background: #e5e7eb; opacity: 0.8; }
+.fc .fc-event.duty { background: #dbeafe; border-color: #93c5fd; color: #1e3a8a; }
+.fc .fc-event.meeting { background: #16a34a; border-color: #15803d; }
+.fc .fc-event.meeting.pending { background: #f59e0b; border-color: #d97706; }
+.fc .fc-toolbar { flex-wrap: wrap; gap: 0.5rem; }
+.fc .fc-toolbar-title { font-size: 1.1rem; }
