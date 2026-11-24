@@ -36,6 +36,8 @@ describe('homeFor', () => {
   it('null -> /login', () => expect(homeFor(null)).toBe('/login'))
   it('pending -> /pending', () => expect(homeFor(p({ status: 'pending', role: null }))).toBe('/pending'))
   it('disabled -> /pending', () => expect(homeFor(p({ status: 'disabled' }))).toBe('/pending'))
+  it('active without role -> /pending', () =>
+    expect(homeFor(p({ status: 'active', role: null }))).toBe('/pending'))
   it('grad -> /calendar', () => expect(homeFor(p({}))).toBe('/calendar'))
   it('undergrad -> /booking', () => expect(homeFor(p({ role: 'undergrad' }))).toBe('/booking'))
 })

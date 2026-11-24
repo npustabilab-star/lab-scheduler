@@ -15,7 +15,8 @@ function Guard({ need, children }: { need: 'anon' | 'pending' | 'active'; childr
   const { profile, session, loading } = useAuth()
   if (loading) return <p className="p-4">載入中…</p>
   const home = homeFor(session ? profile : null)
-  const state = !session || !profile ? 'anon' : profile.status === 'active' ? 'active' : 'pending'
+  // A profile with no routes (pending, disabled, or active without a role) counts as 'pending'.
+  const state = !session || !profile ? 'anon' : routesFor(profile).length > 0 ? 'active' : 'pending'
   if (state !== need) return <Navigate to={state === 'anon' && need !== 'anon' ? '/login' : home} replace />
   return <>{children}</>
 }
@@ -39,10 +40,8 @@ const PAGES: [RouteKey, string][] = [
   ['admin', '管理'],
 ]
 
-export default function App() {
+export function AppRoutes() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Guard need="anon"><LoginPage /></Guard>} />
           <Route path="/pending" element={<Guard need="pending"><PendingPage /></Guard>} />
@@ -53,6 +52,14 @@ export default function App() {
           </Route>
           <Route path="*" element={<Home />} />
         </Routes>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <AppRoutes />
       </BrowserRouter>
     </AuthProvider>
   )
