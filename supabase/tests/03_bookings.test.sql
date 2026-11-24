@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(23);
+select plan(26);
 
 set local app.now = '2026-03-02 09:00';
 
@@ -86,6 +86,21 @@ select is((select status::text from bookings where id = :'b'::uuid), 'cancelled'
 select throws_ok(format($$select cancel_booking(%L)$$, :'b'), 'NOT_CANCELLABLE', 'cannot cancel twice');
 
 select tests.logout();
+-- bookable dates are limited to the current semester
+select tests.logout();
+update semesters set start_date = '2026-03-23' where is_current;
+insert into semesters (name, start_date, end_date, is_current) values ('OLD', '2026-02-16', '2026-03-22', false);
+insert into weekly_slots (user_id, semester_id, weekday, period)
+  select u, id, 1, 3 from semesters, (values (:'t'::uuid), (:'g'::uuid)) v(u) where name = 'OLD';
+select tests.login_as(:'u'::uuid);
+select ok(not exists (select 1 from available_slots() where date < '2026-03-23'),
+  'available_slots excludes dates before the current semester');
+select ok(exists (select 1 from available_slots() where date = '2026-03-23' and period = 3),
+  'available_slots still has current-semester dates');
+select throws_ok($$select create_booking('2026-03-09', 3::smallint)$$, 'SLOT_UNAVAILABLE',
+  'cannot book in a non-current semester');
+select tests.logout();
+
 select is(has_function_privilege('authenticated', 'cancel_bookings_internal(uuid[], text)', 'execute'), false,
   'cancel_bookings_internal not executable by authenticated');
 

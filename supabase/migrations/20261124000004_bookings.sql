@@ -42,7 +42,7 @@ as $$
   from profiles me
   join profiles m on m.id = me.mentor_id and m.status = 'active'
   cross join lateral current_semester() s
-  cross join lateral generate_series(taipei_today() + 7, s.end_date, interval '1 day') d
+  cross join lateral generate_series(greatest(taipei_today() + 7, s.start_date), s.end_date, interval '1 day') d
   cross join periods per
   where me.id = auth.uid() and me.role = 'undergrad' and me.status = 'active'
     and is_present(the_teacher(), d::date, per.period)
