@@ -21,9 +21,9 @@ const input = 'rounded border px-2 py-1'
 const btn = 'rounded border px-3 py-1 disabled:opacity-50'
 const msg = (e: unknown) => (e instanceof Error ? e.message : String(e))
 
-async function must<T>(p: PromiseLike<{ data: T | null; error: { message: string } | null }>): Promise<T> {
+async function must<T>(p: PromiseLike<{ data: T | null; error: { message: string; code?: string } | null }>): Promise<T> {
   const { data, error } = await p
-  if (error) throw new Error(error.message)
+  if (error) throw Object.assign(new Error(error.message), { code: error.code })
   return (data ?? []) as T
 }
 
@@ -169,7 +169,12 @@ export default function AdminPage() {
         <SemesterTab semesters={semesters}
           onAdd={(name, start, end) =>
             void act(async () => {
-              await must(supabase.from('semesters').insert({ name, start_date: start, end_date: end }))
+              try {
+                await must(supabase.from('semesters').insert({ name, start_date: start, end_date: end }))
+              } catch (e) {
+                if ((e as { code?: string }).code === '23P01') throw new Error('學期日期與現有學期重疊，請調整起訖日期')
+                throw e
+              }
             })}
           onSetCurrent={(id) =>
             void act(async () => {

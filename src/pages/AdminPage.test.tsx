@@ -11,6 +11,7 @@ const h = vi.hoisted(() => ({
   addNoClassDay: vi.fn(),
   removeNoClassDay: vi.fn(),
   failPeriod: 0,
+  semesterInsertError: null as { message: string; code: string } | null,
   periodUpdates: [] as number[],
 }))
 
@@ -22,7 +23,9 @@ vi.mock('../lib/supabase', () => ({
       let failed = false
       const q: Record<string, unknown> = {}
       const chain = () => q
-      for (const m of ['select', 'order', 'insert', 'delete', 'neq']) q[m] = chain
+      for (const m of ['select', 'order', 'delete', 'neq']) q[m] = chain
+      let insertError: unknown = null
+      q.insert = () => ((insertError = table === 'semesters' ? h.semesterInsertError : null), q)
       q.update = () => ((updating = true), q)
       q.eq = (_c: string, v: unknown) => {
         if (table === 'periods' && updating) {
@@ -32,7 +35,7 @@ vi.mock('../lib/supabase', () => ({
         return q
       }
       q.then = (res: (v: unknown) => unknown) =>
-        res(failed ? { data: null, error: { message: 'boom' } } : { data: h.tables[table] ?? [], error: null })
+        res(insertError ? { data: null, error: insertError } : failed ? { data: null, error: { message: 'boom' } } : { data: h.tables[table] ?? [], error: null })
       return q
     },
   },
@@ -49,6 +52,7 @@ beforeEach(() => {
   h.tables = { profiles: [grad, newbie], semesters: [], periods: [], no_class_days: [] }
   h.approveUser.mockResolvedValue(undefined)
   h.failPeriod = 0
+  h.semesterInsertError = null
   h.periodUpdates = []
 })
 
@@ -108,5 +112,19 @@ describe('AdminPage period times', () => {
     await user.click(screen.getByRole('button', { name: '儲存節次時間' }))
     await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('第 2 節儲存失敗：boom（前面的節次已儲存）'))
     expect(h.periodUpdates).toEqual([1, 2])
+  })
+})
+
+describe('AdminPage semesters', () => {
+  it('maps the overlap exclusion violation (23P01) to a friendly message', async () => {
+    h.semesterInsertError = { message: 'conflicting key value violates exclusion constraint', code: '23P01' }
+    const user = userEvent.setup()
+    render(<AdminPage />)
+    await user.click(await screen.findByRole('tab', { name: '學期' }))
+    await user.type(screen.getByLabelText('學期名稱'), '115-2')
+    fireEvent.change(screen.getByLabelText('開始日'), { target: { value: '2026-02-16' } })
+    fireEvent.change(screen.getByLabelText('結束日'), { target: { value: '2026-06-30' } })
+    await user.click(screen.getByRole('button', { name: '新增學期' }))
+    expect((await screen.findByRole('alert')).textContent).toContain('學期日期與現有學期重疊，請調整起訖日期')
   })
 })
