@@ -12,7 +12,15 @@ export type AffectedBooking = {
 }
 export type ChangeResult = { applied: boolean; affected: AffectedBooking[] }
 
-export const supabase = createClient<Database>(
-  import.meta.env.VITE_SUPABASE_URL ?? 'http://127.0.0.1:55321',
-  import.meta.env.VITE_SUPABASE_ANON_KEY ?? 'missing-anon-key',
-)
+type Env = { PROD?: boolean; VITE_SUPABASE_URL?: string; VITE_SUPABASE_ANON_KEY?: string }
+
+/** Production builds must be configured explicitly; the local dev defaults apply only outside PROD. */
+export function resolveSupabaseConfig(env: Env): { url: string; key: string } {
+  const url = env.VITE_SUPABASE_URL
+  const key = env.VITE_SUPABASE_ANON_KEY
+  if (env.PROD && (!url || !key)) throw new Error('缺少 VITE_SUPABASE_URL 或 VITE_SUPABASE_ANON_KEY 設定')
+  return { url: url || 'http://127.0.0.1:55321', key: key || 'missing-anon-key' }
+}
+
+const cfg = resolveSupabaseConfig(import.meta.env)
+export const supabase = createClient<Database>(cfg.url, cfg.key)
