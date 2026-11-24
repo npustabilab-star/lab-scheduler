@@ -11,6 +11,7 @@ import { useTableChanges } from '../hooks/useTableChanges'
 import { addException, removeException, roster, uncoveredDays } from '../lib/api'
 import { toEvents } from '../lib/calendar'
 import { runWithImpact } from '../lib/changes'
+import { createLatestOnly } from '../lib/latestOnly'
 import { PERIODS } from '../lib/grid'
 import { loadSemesterAndPeriods } from '../lib/semester'
 import { supabase } from '../lib/supabase'
@@ -37,10 +38,12 @@ export default function CalendarPage() {
   const [period, setPeriod] = useState<number>(1)
   const [pending, setPending] = useState<Pending | null>(null)
   const busy = useRef(false)
+  const beginLoad = useRef(createLatestOnly()).current
   const narrow = useMemo(() => typeof window !== 'undefined' && window.innerWidth < 640, [])
 
   const load = useCallback(async () => {
     if (!range || !profile) return
+    const isCurrent = beginLoad()
     try {
       const [{ times }, rows, uncovered, gradRes, bookRes, ncRes, exRes] = await Promise.all([
         loadSemesterAndPeriods(),
@@ -56,6 +59,7 @@ export default function CalendarPage() {
         supabase.from('no_class_days').select().gte('date', range.from).lte('date', range.to),
         supabase.from('slot_exceptions').select().eq('user_id', profile.id).gte('date', range.from).lte('date', range.to),
       ])
+      if (!isCurrent()) return
       for (const r of [gradRes, bookRes, ncRes, exRes]) if (r.error) throw new Error(r.error.message)
       const names = new Map((gradRes.data ?? []).map((g) => [g.id, g.display_name]))
       const bookings = (bookRes.data ?? []).map((b) => ({
@@ -69,9 +73,9 @@ export default function CalendarPage() {
       setExceptions((exRes.data ?? []).map((x) => ({ date: x.date, period: x.period })))
       setError(null)
     } catch (e) {
-      setError(errMsg(e))
+      if (isCurrent()) setError(errMsg(e))
     }
-  }, [range, profile])
+  }, [range, profile, beginLoad])
 
   useEffect(() => {
     void load()
