@@ -32,3 +32,16 @@ begin
   perform set_config('request.jwt.claims', '', true);
   perform set_config('request.jwt.claim.sub', '', true);
 end $$;
+
+create or replace function tests.make_booking(
+  p_undergrad uuid, p_date date, p_period smallint,
+  p_status booking_status default 'confirmed') returns uuid
+language plpgsql as $$
+declare v_id uuid := gen_random_uuid();
+begin
+  insert into public.bookings (id, undergrad_id, teacher_id, grad_id, date, period, status, teacher_ok, grad_ok)
+  select v_id, p_undergrad, public.the_teacher(), p.mentor_id, p_date, p_period, p_status,
+         p_status = 'confirmed', p_status = 'confirmed'
+    from public.profiles p where p.id = p_undergrad;
+  return v_id;
+end $$;
