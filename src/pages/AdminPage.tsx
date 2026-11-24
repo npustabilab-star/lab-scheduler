@@ -180,11 +180,16 @@ export default function AdminPage() {
       )}
 
       {tab === '節次時間' && (
-        <PeriodsTab periods={periods}
+        <PeriodsTab periods={periods} onError={setActionError}
           onSave={(rows) =>
             void act(async () => {
-              for (const r of rows)
-                await must(supabase.from('periods').update({ start_time: r.start, end_time: r.end }).eq('period', r.period))
+              for (const [i, r] of rows.entries()) {
+                try {
+                  await must(supabase.from('periods').update({ start_time: r.start, end_time: r.end }).eq('period', r.period))
+                } catch (e) {
+                  throw new Error(`第 ${r.period} 節儲存失敗：${msg(e)}${i > 0 ? '（前面的節次已儲存）' : ''}`)
+                }
+              }
             })} />
       )}
 
@@ -275,8 +280,9 @@ function SemesterTab({ semesters, onAdd, onSetCurrent }: {
   )
 }
 
-function PeriodsTab({ periods, onSave }: {
+function PeriodsTab({ periods, onSave, onError }: {
   periods: Period[]
+  onError: (m: string | null) => void
   onSave: (rows: { period: number; start: string; end: string }[]) => void
 }) {
   const [draft, setDraft] = useState<Record<number, { start: string; end: string }>>(() =>
@@ -288,7 +294,18 @@ function PeriodsTab({ periods, onSave }: {
     <form className="space-y-2 text-sm"
       onSubmit={(e) => {
         e.preventDefault()
-        onSave(Object.entries(draft).map(([n, v]) => ({ period: Number(n), ...v })))
+        const rows = Object.entries(draft)
+          .map(([n, v]) => ({ period: Number(n), ...v }))
+          .sort((a, b) => a.period - b.period)
+        for (const r of rows) {
+          if (r.end <= r.start) return onError(`第 ${r.period} 節結束時間必須晚於開始時間`)
+        }
+        for (let i = 1; i < rows.length; i++) {
+          if (rows[i].start < rows[i - 1].end)
+            return onError(`第 ${rows[i].period} 節不能早於第 ${rows[i - 1].period} 節結束`)
+        }
+        onError(null)
+        onSave(rows)
       }}>
       {periods.map((p) => (
         <div key={p.period} className="flex items-center gap-2">
