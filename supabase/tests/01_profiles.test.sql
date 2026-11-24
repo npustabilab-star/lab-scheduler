@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(18);
 
 -- new auth user gets pending profile
 insert into auth.users (id, email, raw_user_meta_data)
@@ -52,6 +52,18 @@ select tests.logout();
 -- bootstrap only once (an admin already exists)
 select throws_ok($$select bootstrap_admin('b@x.com')$$, 'ALREADY_BOOTSTRAPPED', 'bootstrap only once');
 
+
+-- the_teacher / current_semester respect the active-only rule
+insert into semesters (name, start_date, end_date, is_current) values ('S', '2026-02-01', '2026-06-30', true);
+select tests.login_as(:'pend2');
+select is(the_teacher(), null::uuid, 'pending user gets null from the_teacher()');
+select is((current_semester()).id, null::bigint, 'pending user gets no row from current_semester()');
+select tests.logout();
+select tests.login_as(:'grad');
+select is(the_teacher(), :'teacher'::uuid, 'active user gets the teacher id');
+select isnt((current_semester()).id, null::bigint, 'active user gets the current semester');
+select tests.logout();
+select is(the_teacher(), :'teacher'::uuid, 'trusted backend (no JWT) still gets the teacher id');
 -- taipei time
 set local app.now = '2026-03-02 00:30';
 select is(taipei_today(), '2026-03-02'::date, 'taipei_today uses app.now override');

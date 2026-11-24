@@ -11,11 +11,13 @@ as $$ select exists (select 1 from profiles where id = auth.uid() and status = '
 
 create function the_teacher() returns uuid
 language sql stable security definer set search_path = public
-as $$ select id from profiles where role = 'teacher' and status = 'active' limit 1 $$;
+as $$ select id from profiles where role = 'teacher' and status = 'active'
+    and (auth.uid() is null or is_active_member()) limit 1 $$;
 
 create function current_semester() returns semesters
 language sql stable security definer set search_path = public
-as $$ select s from semesters s where is_current limit 1 $$;
+as $$ select s from semesters s where is_current
+    and (auth.uid() is null or is_active_member()) limit 1 $$;
 
 -- new auth user -> pending profile
 create function handle_new_user() returns trigger
@@ -110,3 +112,7 @@ end $$;
 revoke execute on function bootstrap_admin(text) from public, anon, authenticated;
 revoke execute on function approve_user(uuid, user_role, uuid) from public, anon;
 revoke execute on function set_admin(uuid, boolean) from public, anon;
+
+-- Only active members (or trusted backends with no JWT, e.g. postgres) get values; anon has no execute.
+revoke execute on function the_teacher() from public, anon;
+revoke execute on function current_semester() from public, anon;
