@@ -4,11 +4,13 @@ import { AuthProvider, useAuth } from './auth/AuthProvider'
 import Layout from './components/Layout'
 import { homeFor, routesFor } from './lib/routes'
 import type { RouteKey } from './lib/routes'
+import BookingPage from './pages/BookingPage'
 import CalendarPage from './pages/CalendarPage'
 import LoginPage from './pages/LoginPage'
 import MasterPage from './pages/MasterPage'
 import MyGridPage from './pages/MyGridPage'
 import PendingPage from './pages/PendingPage'
+import RequestsPage from './pages/RequestsPage'
 
 function Placeholder({ name }: { name: string }) {
   return <h1 className="text-xl font-bold">{name}</h1>
@@ -50,7 +52,7 @@ export function AppRoutes() {
           <Route path="/pending" element={<Guard need="pending"><PendingPage /></Guard>} />
           <Route element={<Guard need="active"><Layout /></Guard>}>
             {PAGES.map(([k, label]) => (
-              <Route key={k} path={`/${k}`} element={<RouteGate k={k}>{k === 'calendar' ? <CalendarPage /> : k === 'my-grid' ? <MyGridPage /> : k === 'master' ? <MasterPage /> : <Placeholder name={label} />}</RouteGate>} />
+              <Route key={k} path={`/${k}`} element={<RouteGate k={k}>{k === 'calendar' ? <CalendarPage /> : k === 'my-grid' ? <MyGridPage /> : k === 'master' ? <MasterPage /> : k === 'booking' ? <BookingPage /> : k === 'requests' ? <RequestsPage /> : <Placeholder name={label} />}</RouteGate>} />
             ))}
           </Route>
           <Route path="*" element={<Home />} />
