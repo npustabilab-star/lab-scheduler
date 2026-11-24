@@ -81,4 +81,20 @@ describe('RequestsPage', () => {
     await screen.findByRole('button', { name: '同意' })
     expect(screen.getByRole('alert').textContent).toContain('不是待確認狀態')
   })
+
+  it('lists an upcoming pending booking I already accepted as waiting, with a cancel button', async () => {
+    h.bookings = [
+      {
+        id: 'b2', date: '2099-03-09', period: 3, note: null, status: 'pending',
+        teacher_ok: true, grad_ok: false, reason: null,
+        teacher_id: 'me', grad_id: 'g', undergrad_id: 'u',
+        undergrad: { display_name: '小華' }, teacher: null, grad: null,
+      },
+    ]
+    render(<RequestsPage />)
+    expect(await screen.findByText('等待另一位確認')).toBeTruthy()
+    expect(screen.getByText('沒有待確認的預約')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '同意' })).toBeNull()
+    expect(screen.getByRole('button', { name: '取消' })).toBeTruthy()
+  })
 })

@@ -61,7 +61,8 @@ export default function RequestsPage() {
   const upcoming = bookings.filter((b) => activeBooking([b], now, periodEnd) !== null)
   const mine = (b: BookingRow) => (b.teacher_id === profile?.id && !b.teacher_ok) || (b.grad_id === profile?.id && !b.grad_ok)
   const toConfirm = upcoming.filter((b) => b.status === 'pending' && mine(b))
-  const meetings = upcoming.filter((b) => b.status === 'confirmed')
+  // confirmed meetings, plus pending ones I already accepted (waiting for the other side)
+  const meetings = upcoming.filter((b) => b.status === 'confirmed' || (b.status === 'pending' && !mine(b)))
 
   const act = async (fn: () => Promise<unknown>) => {
     if (busy.current) return
@@ -133,6 +134,7 @@ export default function RequestsPage() {
                 {who(b)}　{formatSlotLabel(b.date, b.period)}
               </p>
               {b.note && <p className="text-gray-700">{b.note}</p>}
+              {b.status === 'pending' && <p className="text-amber-700">等待另一位確認</p>}
               <button type="button" className="mt-2 rounded border px-3 py-1" onClick={() => setAction({ kind: 'cancel', booking: b })}>
                 取消
               </button>
