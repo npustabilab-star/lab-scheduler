@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import WeekGrid from '../components/WeekGrid'
 import { useTableChanges } from '../hooks/useTableChanges'
 import { WEEKDAY_LABELS, buildMasterGrid, formatMasterSelection, slotKey, uncoveredWeekdays } from '../lib/grid'
+import { createLatestOnly } from '../lib/latestOnly'
 import { loadSemesterAndPeriods } from '../lib/semester'
 import type { PeriodTimes } from '../lib/semester'
 import { supabase } from '../lib/supabase'
@@ -17,18 +18,23 @@ export default function MasterPage() {
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<{ w: number; p: number } | null>(null)
 
+  const beginLoad = useRef(createLatestOnly()).current
+
   const load = useCallback(async () => {
+    const isCurrent = beginLoad()
     try {
       const { semesterId, times } = await loadSemesterAndPeriods()
+      if (!isCurrent()) return
       if (!semesterId) {
         setHasSemester(false)
         return
       }
-      setHasSemester(true)
       const [slotRes, gradRes] = await Promise.all([
         supabase.from('weekly_slots').select().eq('semester_id', semesterId),
         supabase.from('profiles').select().eq('role', 'grad').eq('status', 'active'),
       ])
+      if (!isCurrent()) return
+      setHasSemester(true)
       if (slotRes.error) throw new Error(slotRes.error.message)
       if (gradRes.error) throw new Error(gradRes.error.message)
       setSlots(slotRes.data ?? [])
@@ -36,11 +42,11 @@ export default function MasterPage() {
       setTimes(times)
       setError(null)
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      if (isCurrent()) setError(e instanceof Error ? e.message : String(e))
     } finally {
-      setLoaded(true)
+      if (isCurrent()) setLoaded(true)
     }
-  }, [])
+  }, [beginLoad])
 
   useEffect(() => {
     void load()

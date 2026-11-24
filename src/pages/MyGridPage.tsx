@@ -5,6 +5,7 @@ import WeekGrid from '../components/WeekGrid'
 import { setWeeklySlot } from '../lib/api'
 import { runWithImpact } from '../lib/changes'
 import { slotKey } from '../lib/grid'
+import { createLatestOnly } from '../lib/latestOnly'
 import type { PeriodTimes } from '../lib/semester'
 import { loadSemesterAndPeriods } from '../lib/semester'
 import { supabase } from '../lib/supabase'
@@ -22,27 +23,31 @@ export default function MyGridPage() {
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState<Pending | null>(null)
   const busy = useRef(false)
+  const beginLoad = useRef(createLatestOnly()).current
 
   const load = useCallback(async () => {
     if (!profile) return
+    const isCurrent = beginLoad()
     try {
       const { semesterId, times } = await loadSemesterAndPeriods()
+      if (!isCurrent()) return
       if (!semesterId) {
         setHasSemester(false)
         return
       }
-      setHasSemester(true)
       const slots = await supabase.from('weekly_slots').select().eq('user_id', profile.id).eq('semester_id', semesterId)
+      if (!isCurrent()) return
+      setHasSemester(true)
       if (slots.error) throw new Error(slots.error.message)
       setOn(new Set((slots.data ?? []).map((s) => slotKey(s.weekday, s.period))))
       setTimes(times)
       setError(null)
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      if (isCurrent()) setError(e instanceof Error ? e.message : String(e))
     } finally {
-      setLoaded(true)
+      if (isCurrent()) setLoaded(true)
     }
-  }, [profile])
+  }, [profile, beginLoad])
 
   useEffect(() => {
     void load()
