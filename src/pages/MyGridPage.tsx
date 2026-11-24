@@ -5,6 +5,8 @@ import WeekGrid from '../components/WeekGrid'
 import { setWeeklySlot } from '../lib/api'
 import { runWithImpact } from '../lib/changes'
 import { slotKey } from '../lib/grid'
+import type { PeriodTimes } from '../lib/semester'
+import { loadSemesterAndPeriods } from '../lib/semester'
 import { supabase } from '../lib/supabase'
 import type { AffectedBooking } from '../lib/supabase'
 import { useTableChanges } from '../hooks/useTableChanges'
@@ -16,7 +18,7 @@ export default function MyGridPage() {
   const [loaded, setLoaded] = useState(false)
   const [hasSemester, setHasSemester] = useState(true)
   const [on, setOn] = useState<Set<string>>(new Set())
-  const [times, setTimes] = useState<Record<number, { start: string; end: string }>>({})
+  const [times, setTimes] = useState<PeriodTimes>({})
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState<Pending | null>(null)
   const busy = useRef(false)
@@ -24,25 +26,16 @@ export default function MyGridPage() {
   const load = useCallback(async () => {
     if (!profile) return
     try {
-      const sem = await supabase.from('semesters').select().eq('is_current', true).maybeSingle()
-      if (sem.error) throw new Error(sem.error.message)
-      if (!sem.data) {
+      const { semesterId, times } = await loadSemesterAndPeriods()
+      if (!semesterId) {
         setHasSemester(false)
         return
       }
       setHasSemester(true)
-      const [slots, periods] = await Promise.all([
-        supabase.from('weekly_slots').select().eq('user_id', profile.id).eq('semester_id', sem.data.id),
-        supabase.from('periods').select(),
-      ])
+      const slots = await supabase.from('weekly_slots').select().eq('user_id', profile.id).eq('semester_id', semesterId)
       if (slots.error) throw new Error(slots.error.message)
-      if (periods.error) throw new Error(periods.error.message)
       setOn(new Set((slots.data ?? []).map((s) => slotKey(s.weekday, s.period))))
-      setTimes(
-        Object.fromEntries(
-          (periods.data ?? []).map((p) => [p.period, { start: p.start_time.slice(0, 5), end: p.end_time.slice(0, 5) }]),
-        ),
-      )
+      setTimes(times)
       setError(null)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))

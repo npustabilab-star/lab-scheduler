@@ -5,6 +5,7 @@ import Layout from './components/Layout'
 import { homeFor, routesFor } from './lib/routes'
 import type { RouteKey } from './lib/routes'
 import LoginPage from './pages/LoginPage'
+import MasterPage from './pages/MasterPage'
 import MyGridPage from './pages/MyGridPage'
 import PendingPage from './pages/PendingPage'
 
@@ -48,7 +49,7 @@ export function AppRoutes() {
           <Route path="/pending" element={<Guard need="pending"><PendingPage /></Guard>} />
           <Route element={<Guard need="active"><Layout /></Guard>}>
             {PAGES.map(([k, label]) => (
-              <Route key={k} path={`/${k}`} element={<RouteGate k={k}>{k === 'my-grid' ? <MyGridPage /> : <Placeholder name={label} />}</RouteGate>} />
+              <Route key={k} path={`/${k}`} element={<RouteGate k={k}>{k === 'my-grid' ? <MyGridPage /> : k === 'master' ? <MasterPage /> : <Placeholder name={label} />}</RouteGate>} />
             ))}
           </Route>
           <Route path="*" element={<Home />} />
