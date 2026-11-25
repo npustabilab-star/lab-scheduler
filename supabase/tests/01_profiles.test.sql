@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(12);
 
 -- new auth user gets pending profile
 insert into auth.users (id, email, raw_user_meta_data)
@@ -30,27 +30,12 @@ select tests.logout();
 select tests.login_as(:'grad');
 select is((select count(*) from profiles), 6::bigint, 'active user sees all profiles');
 
-select throws_ok(format($$select approve_user(%L, 'grad')$$, :'pend'), 'NOT_ADMIN', 'non-admin cannot approve');
 select tests.logout();
 
--- admin approves
 select tests.login_as(:'teacher');
-select approve_user(:'pend', 'undergrad', :'grad');
-select tests.logout();
-select results_eq(
-  format($$select status::text, role::text, mentor_id from profiles where id = %L$$, :'pend'),
-  format($$values ('active', 'undergrad', %L::uuid)$$, :'grad'),
-  'admin approves undergrad with mentor');
-
-select tests.login_as(:'teacher');
-select throws_ok(format($$select approve_user(%L, 'undergrad', null)$$, :'pend2'), 'INVALID_MENTOR', 'mentor null rejected');
-select throws_ok(format($$select approve_user(%L, 'undergrad', %L)$$, :'pend2', :'teacher'), 'INVALID_MENTOR', 'teacher mentor rejected');
-select throws_ok(format($$select approve_user(%L, 'teacher')$$, :'pend2'), 'TEACHER_EXISTS', 'second teacher rejected');
 select throws_ok(format($$select set_admin(%L, false)$$, :'teacher'), 'LAST_ADMIN', 'cannot remove last admin');
 select tests.logout();
 
--- bootstrap only once (an admin already exists)
-select throws_ok($$select bootstrap_admin('b@x.com')$$, 'ALREADY_BOOTSTRAPPED', 'bootstrap only once');
 
 
 -- the_teacher / current_semester respect the active-only rule

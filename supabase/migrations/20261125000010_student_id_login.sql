@@ -16,11 +16,23 @@ language sql stable security definer set search_path = public
 as $$ select exists (select 1 from profiles
     where id = auth.uid() and status = 'active' and is_admin and not must_change_password) $$;
 
--- caller clears their own flag (must work before they count as an active member)
+-- caller clears their own flag (must work before they count as an active member).
+-- The client cannot be trusted: refuse while the password still equals the initial one.
 create function password_changed() returns void
-language plpgsql security definer set search_path = public
+language plpgsql security definer set search_path = public, auth, extensions
 as $$
+declare
+  v_sid text;
+  v_hash text;
 begin
+  select student_id into v_sid from profiles where id = auth.uid();
+  if v_sid is not null then
+    select encrypted_password into v_hash from auth.users where id = auth.uid();
+    if v_hash is not null
+       and v_hash = extensions.crypt('lab-scheduler:' || right(v_sid, 4), v_hash) then
+      raise exception 'PASSWORD_NOT_CHANGED';
+    end if;
+  end if;
   update profiles set must_change_password = false where id = auth.uid();
 end $$;
 revoke execute on function password_changed() from public, anon;
@@ -34,7 +46,7 @@ language plpgsql security definer set search_path = public
 as $$
 begin
   p_student_id := lower(btrim(coalesce(p_student_id, '')));
-  if length(p_student_id) < 4 then raise exception 'INVALID_STUDENT_ID'; end if;
+  if p_student_id !~ '^[a-z0-9._-]{4,}$' then raise exception 'INVALID_STUDENT_ID'; end if;
   p_notify_email := nullif(btrim(coalesce(p_notify_email, '')), '');
   if not exists (select 1 from profiles where id = p_user) then raise exception 'USER_NOT_FOUND'; end if;
   if exists (select 1 from profiles where student_id = p_student_id and id <> p_user) then
@@ -97,3 +109,7 @@ language sql stable security definer set search_path = public
 as $$ select exists (select 1 from profiles
        where id = auth.uid() and status = 'active' and not must_change_password
          and role in ('teacher','grad')) $$;
+
+-- leftovers of the Google-era approval flow
+drop function if exists approve_user(uuid, user_role, uuid);
+drop function if exists bootstrap_admin(text);

@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(24);
 
 insert into semesters (name, start_date, end_date, is_current) values ('S', '2026-02-16', '2026-06-30', true);
 
@@ -85,6 +85,35 @@ select throws_ok(
 select throws_ok(
   format($$select admin_setup_member(%L, '', 'x', 'grad', null, null, false)$$, :'n2'),
   'INVALID_STUDENT_ID', 'empty student id rejected');
+select throws_ok(
+  format($$select admin_setup_member(%L, 'ab cd', 'x', 'grad', null, null, false)$$, :'n2'),
+  'INVALID_STUDENT_ID', 'student id with a space is rejected');
+select throws_ok(
+  format($$select admin_setup_member(%L, 'ab/cd', 'x', 'grad', null, null, false)$$, :'n2'),
+  'INVALID_STUDENT_ID', 'student id with a slash is rejected');
+select lives_ok(
+  format($$select admin_setup_member(%L, 'A.b_c-1', 'y', 'grad', null, null, false)$$, :'n2'),
+  'student id with . _ - is accepted');
+
+-- password_changed refuses while the password is still the initial one
+select tests.create_user('pw@x.com', 'grad') as pw \gset
+update profiles set student_id = 'b11234567', must_change_password = true where id = :'pw';
+update auth.users set encrypted_password = extensions.crypt('lab-scheduler:4567', extensions.gen_salt('bf'))
+  where id = :'pw';
+select tests.login_as(:'pw');
+select throws_ok($$select password_changed()$$, 'PASSWORD_NOT_CHANGED',
+  'password_changed refuses while the password is still the initial one');
+select tests.logout();
+update auth.users set encrypted_password = extensions.crypt('lab-scheduler:new-secret', extensions.gen_salt('bf'))
+  where id = :'pw';
+select tests.login_as(:'pw');
+select lives_ok($$select password_changed()$$, 'password_changed succeeds after the password changed');
+select tests.logout();
+
+set local role anon;
+select throws_ok($$select password_changed()$$, '42501', null, 'anon cannot execute password_changed');
+reset role;
+
 -- self signup stays pending
 insert into auth.users (id, email) values ('bbbbbbbb-0000-0000-0000-000000000001', 'self@x.com');
 select results_eq(

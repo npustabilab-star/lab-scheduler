@@ -19,7 +19,8 @@ const cases: Record<string, string> = {
   NOT_UNDERGRAD: '只有專題生可以預約',
   STUDENT_ID_EXISTS: '這個學號已經在名單中',
   EMAIL_REQUIRED: '老師必須填寫 Email',
-  INVALID_STUDENT_ID: '學號至少 4 碼',
+  INVALID_STUDENT_ID: '學號至少 4 碼，只能包含英文字母、數字與 . _ -',
+  PASSWORD_NOT_CHANGED: '請先設定新的密碼',
 }
 
 describe('rpcErrorMessage', () => {

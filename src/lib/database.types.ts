@@ -213,9 +213,6 @@ isOneToOne: false
 "admin_setup_member":
 { Args: { "p_display_name": string,"p_is_admin": boolean,"p_mentor": string,"p_notify_email": string,"p_role": Database["public"]['Enums']["user_role"],"p_student_id": string,"p_user": string }; Returns: undefined
                            },
-"approve_user":
-{ Args: { "p_mentor"?: string,"p_role": Database["public"]['Enums']["user_role"],"p_user": string }; Returns: undefined
-                           },
 "available_slots":
 { Args: Record<PropertyKey, never>; Returns: {
               "date": string,"period": number
@@ -223,9 +220,6 @@ isOneToOne: false
                            },
 "booking_is_upcoming":
 { Args: { "b": Omit<Database["public"]['Tables']["bookings"]['Row'], Database["public"]['Tables']["bookings"]['ComputedFields']> }; Returns: boolean
-                           },
-"bootstrap_admin":
-{ Args: { "p_email": string }; Returns: undefined
                            },
 "cancel_booking":
 { Args: { "p_booking": string,"p_reason"?: string }; Returns: undefined
