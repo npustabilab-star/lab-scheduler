@@ -161,7 +161,7 @@ describe('AdminPage period times', () => {
     const user = await open()
     fireEvent.change(screen.getByLabelText('第2節結束'), { target: { value: '09:10' } })
     await user.click(screen.getByRole('button', { name: '儲存節次時間' }))
-    expect(screen.getByRole('alert').textContent).toContain('第 2 節結束時間必須晚於開始時間')
+    expect(screen.getByRole('alert').textContent).toContain('第2節結束時間必須晚於開始時間')
     expect(h.periodUpdates).toEqual([])
   })
 
@@ -169,7 +169,7 @@ describe('AdminPage period times', () => {
     const user = await open()
     fireEvent.change(screen.getByLabelText('第2節開始'), { target: { value: '08:30' } })
     await user.click(screen.getByRole('button', { name: '儲存節次時間' }))
-    expect(screen.getByRole('alert').textContent).toContain('第 2 節不能早於第 1 節結束')
+    expect(screen.getByRole('alert').textContent).toContain('第2節不能早於第1節結束')
     expect(h.periodUpdates).toEqual([])
   })
 
@@ -177,7 +177,7 @@ describe('AdminPage period times', () => {
     h.failPeriod = 2
     const user = await open()
     await user.click(screen.getByRole('button', { name: '儲存節次時間' }))
-    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('第 2 節儲存失敗：boom（前面的節次已儲存）'))
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('第2節儲存失敗：boom（前面的節次已儲存）'))
     expect(h.periodUpdates).toEqual([1, 2])
   })
 })
@@ -193,5 +193,76 @@ describe('AdminPage semesters', () => {
     fireEvent.change(screen.getByLabelText('結束日'), { target: { value: '2026-06-30' } })
     await user.click(screen.getByRole('button', { name: '新增學期' }))
     expect((await screen.findByRole('alert')).textContent).toContain('學期日期與現有學期重疊，請調整起訖日期')
+  })
+})
+
+describe('AdminPage period times (24h text input)', () => {
+  const open = async () => {
+    h.tables.periods = [
+      { period: 1, start_time: '08:10:00', end_time: '09:00:00' },
+      { period: 2, start_time: '09:10:00', end_time: '10:00:00' },
+    ]
+    const user = userEvent.setup()
+    render(<AdminPage />)
+    await user.click(await screen.findByRole('tab', { name: '節次時間' }))
+    return user
+  }
+
+  it('shows existing values as HH:MM in text inputs', async () => {
+    await open()
+    expect(screen.getByLabelText('第1節開始')).toHaveValue('08:10')
+    expect(screen.getByLabelText('第1節開始')).toHaveAttribute('type', 'text')
+  })
+
+  for (const bad of ['1:10 PM', '25:00', '9:5', '12:60']) {
+    it(`rejects "${bad}" with the 24h message and saves nothing`, async () => {
+      const user = await open()
+      fireEvent.change(screen.getByLabelText('第2節開始'), { target: { value: bad } })
+      await user.click(screen.getByRole('button', { name: '儲存節次時間' }))
+      expect(screen.getByRole('alert').textContent).toContain('請用 24 小時制 HH:MM')
+      expect(h.periodUpdates).toEqual([])
+    })
+  }
+
+  it('accepts valid 24h times', async () => {
+    const user = await open()
+    fireEvent.change(screen.getByLabelText('第2節結束'), { target: { value: '13:30' } })
+    await user.click(screen.getByRole('button', { name: '儲存節次時間' }))
+    await waitFor(() => expect(h.periodUpdates).toEqual([1, 2]))
+  })
+})
+
+describe('AdminPage period ordering (午休 is period 8, between 第4節 and 第5節)', () => {
+  const open = async () => {
+    h.tables.periods = [
+      { period: 1, label: '第1節', start_time: '08:10:00', end_time: '09:00:00' },
+      { period: 4, label: '第4節', start_time: '11:10:00', end_time: '12:00:00' },
+      { period: 8, label: '午休', start_time: '13:00:00', end_time: '13:20:00' },
+      { period: 5, label: '第5節', start_time: '13:30:00', end_time: '14:20:00' },
+    ]
+    const user = userEvent.setup()
+    render(<AdminPage />)
+    await user.click(await screen.findByRole('tab', { name: '節次時間' }))
+    return user
+  }
+
+  it('lists rows in start-time order with labels', async () => {
+    await open()
+    const labels = screen.getAllByLabelText(/開始$/).map((i) => i.getAttribute('aria-label'))
+    expect(labels).toEqual(['第1節開始', '第4節開始', '午休開始', '第5節開始'])
+  })
+
+  it('validates overlap in time order, not period-number order', async () => {
+    const user = await open()
+    fireEvent.change(screen.getByLabelText('第5節開始'), { target: { value: '13:10' } })
+    await user.click(screen.getByRole('button', { name: '儲存節次時間' }))
+    expect(screen.getByRole('alert').textContent).toContain('第5節不能早於午休結束')
+    expect(h.periodUpdates).toEqual([])
+  })
+
+  it('saves in time order', async () => {
+    const user = await open()
+    await user.click(screen.getByRole('button', { name: '儲存節次時間' }))
+    await waitFor(() => expect(h.periodUpdates).toEqual([1, 4, 8, 5]))
   })
 })

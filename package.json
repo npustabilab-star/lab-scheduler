@@ -12,11 +12,6 @@
     "gen:types": "supabase gen types typescript --local > src/lib/database.types.ts"
   },
   "dependencies": {
-    "@fullcalendar/core": "^6.1.22",
-    "@fullcalendar/daygrid": "^6.1.22",
-    "@fullcalendar/interaction": "^6.1.22",
-    "@fullcalendar/react": "^6.1.22",
-    "@fullcalendar/timegrid": "^6.1.22",
     "@supabase/supabase-js": "^2.119.2",
     "@tailwindcss/vite": "^4.3.5",
     "react": "^19.3.1",

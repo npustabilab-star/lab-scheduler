@@ -18,6 +18,7 @@ export default function RequestsPage() {
   const { profile } = useAuth()
   const [bookings, setBookings] = useState<BookingRow[]>([])
   const [times, setTimes] = useState<PeriodTimes>({})
+  const [labels, setLabels] = useState<Record<number, string>>({})
   const [loadError, setLoadError] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [action, setAction] = useState<Action | null>(null)
@@ -41,6 +42,7 @@ export default function RequestsPage() {
       if (!isCurrent()) return
       if (bk.error) throw new Error(bk.error.message)
       setTimes(sp.times)
+      setLabels(sp.labels)
       setBookings((bk.data ?? []) as unknown as BookingRow[])
       setLoadError(null)
     } catch (e) {
@@ -104,7 +106,7 @@ export default function RequestsPage() {
           {toConfirm.map((b) => (
             <li key={b.id} className="break-words rounded border p-2 text-sm">
               <p className="font-medium">
-                {who(b)}　{formatSlotLabel(b.date, b.period)}
+                {who(b)}　{formatSlotLabel(b.date, b.period, labels)}
               </p>
               {b.note && <p className="text-gray-700">{b.note}</p>}
               <div className="mt-2 flex gap-2">
@@ -131,7 +133,7 @@ export default function RequestsPage() {
           {meetings.map((b) => (
             <li key={b.id} className="break-words rounded border p-2 text-sm">
               <p className="font-medium">
-                {who(b)}　{formatSlotLabel(b.date, b.period)}
+                {who(b)}　{formatSlotLabel(b.date, b.period, labels)}
               </p>
               {b.note && <p className="text-gray-700">{b.note}</p>}
               {b.status === 'pending' && <p className="text-amber-700">等待另一位確認</p>}

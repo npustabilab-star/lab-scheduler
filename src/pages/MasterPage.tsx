@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import WeekGrid from '../components/WeekGrid'
 import { useTableChanges } from '../hooks/useTableChanges'
+import type { PeriodInfo } from '../lib/grid'
 import { WEEKDAY_LABELS, buildMasterGrid, formatMasterSelection, slotKey, uncoveredWeekdays } from '../lib/grid'
 import { createLatestOnly } from '../lib/latestOnly'
 import { loadSemesterAndPeriods } from '../lib/semester'
-import type { PeriodTimes } from '../lib/semester'
 import { supabase } from '../lib/supabase'
 
 type Slot = { user_id: string; weekday: number; period: number }
@@ -14,7 +14,8 @@ export default function MasterPage() {
   const [hasSemester, setHasSemester] = useState(true)
   const [slots, setSlots] = useState<Slot[]>([])
   const [names, setNames] = useState<Map<string, string>>(new Map())
-  const [times, setTimes] = useState<PeriodTimes>({})
+  const [periods, setPeriods] = useState<PeriodInfo[]>([])
+  const [labels, setLabels] = useState<Record<number, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<{ w: number; p: number } | null>(null)
 
@@ -23,7 +24,7 @@ export default function MasterPage() {
   const load = useCallback(async () => {
     const isCurrent = beginLoad()
     try {
-      const { semesterId, times } = await loadSemesterAndPeriods()
+      const { semesterId, periods, labels } = await loadSemesterAndPeriods()
       if (!isCurrent()) return
       if (!semesterId) {
         setHasSemester(false)
@@ -39,7 +40,8 @@ export default function MasterPage() {
       if (gradRes.error) throw new Error(gradRes.error.message)
       setSlots(slotRes.data ?? [])
       setNames(new Map((gradRes.data ?? []).map((g) => [g.id, g.display_name])))
-      setTimes(times)
+      setPeriods(periods)
+      setLabels(labels)
       setError(null)
     } catch (e) {
       if (isCurrent()) setError(e instanceof Error ? e.message : String(e))
@@ -77,7 +79,7 @@ export default function MasterPage() {
           ))}
           <WeekGrid
             highlightWeekdays={uncovered}
-            periodTimes={times}
+            periods={periods.length ? periods : undefined}
             onToggle={(w, p) => setSelected({ w, p })}
             cells={(w, p) => {
               const list = grid.get(slotKey(w, p)) ?? []
@@ -92,7 +94,7 @@ export default function MasterPage() {
           />
           {selected && (
             <p className="mt-2 text-sm sm:hidden" data-testid="selected-names">
-              {formatMasterSelection(selected.w, selected.p, selectedNames)}
+              {formatMasterSelection(selected.w, selected.p, selectedNames, labels[selected.p])}
             </p>
           )}
         </>

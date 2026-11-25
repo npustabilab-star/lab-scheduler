@@ -27,6 +27,12 @@ const change = async (p: PromiseLike<{ data: unknown; error: { message: string }
 export const setWeeklySlot = (weekday: number, period: number, on: boolean, confirm: boolean) =>
   change(supabase.rpc('set_weekly_slot', { p_weekday: weekday, p_period: period, p_on: on, p_confirm: confirm }))
 
+export const setDaySlot = (date: string, period: number, on: boolean, confirm: boolean) =>
+  change(supabase.rpc('set_day_slot', { p_date: date, p_period: period, p_on: on, p_confirm: confirm }))
+
+export const clearDaySlot = (date: string, period: number, confirm: boolean) =>
+  change(supabase.rpc('clear_day_slot', { p_date: date, p_period: period, p_confirm: confirm }))
+
 export const addException = (date: string, period: number | null, confirm: boolean) =>
   change(supabase.rpc('add_exception', { p_date: date, p_period: period as number, p_confirm: confirm }))
 

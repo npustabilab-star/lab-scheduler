@@ -3,6 +3,7 @@ import ImpactDialog from '../components/ImpactDialog'
 import { useTableChanges } from '../hooks/useTableChanges'
 import * as api from '../lib/api'
 import { runWithImpact } from '../lib/changes'
+import { periodLabel } from '../lib/grid'
 import { createLatestOnly } from '../lib/latestOnly'
 import { supabase } from '../lib/supabase'
 import type { AffectedBooking, Profile } from '../lib/supabase'
@@ -10,7 +11,8 @@ import type { Database } from '../lib/database.types'
 
 type Role = Database['public']['Enums']['user_role']
 type Semester = Database['public']['Tables']['semesters']['Row']
-type Period = Database['public']['Tables']['periods']['Row']
+type Period = Database['public']['Tables']['periods']['Row'] & { label?: string | null }
+const labelFor = (p: Period): string => p.label || periodLabel(p.period)
 type NoClassDay = Database['public']['Tables']['no_class_days']['Row']
 type Pending = { affected: AffectedBooking[]; resolve: (ok: boolean) => void }
 
@@ -37,6 +39,7 @@ export default function AdminPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [pending, setPending] = useState<Pending | null>(null)
+  const labelOf = Object.fromEntries(periods.map((p) => [p.period, labelFor(p)]))
   const busy = useRef(false)
   const latest = useRef(createLatestOnly()).current
 
@@ -46,7 +49,7 @@ export default function AdminPage() {
       const [p, s, pe, d] = await Promise.all([
         must<Profile[]>(supabase.from('profiles').select().order('created_at')),
         must<Semester[]>(supabase.from('semesters').select().order('start_date', { ascending: false })),
-        must<Period[]>(supabase.from('periods').select().order('period')),
+        must<Period[]>(supabase.from('periods').select().order('start_time')),
         must<NoClassDay[]>(supabase.from('no_class_days').select().order('date')),
       ])
       if (!isLatest()) return
@@ -198,7 +201,7 @@ export default function AdminPage() {
                 try {
                   await must(supabase.from('periods').update({ start_time: r.start, end_time: r.end }).eq('period', r.period))
                 } catch (e) {
-                  throw new Error(`第 ${r.period} 節儲存失敗：${msg(e)}${i > 0 ? '（前面的節次已儲存）' : ''}`)
+                  throw new Error(`${labelOf[r.period] ?? `第${r.period}節`}儲存失敗：${msg(e)}${i > 0 ? '（前面的節次已儲存）' : ''}`)
                 }
               }
             })} />
@@ -211,7 +214,7 @@ export default function AdminPage() {
       )}
 
       {pending && (
-        <ImpactDialog affected={pending.affected} onConfirm={() => settle(true)} onCancel={() => settle(false)} />
+        <ImpactDialog affected={pending.affected} labels={labelOf} onConfirm={() => settle(true)} onCancel={() => settle(false)} />
       )}
     </div>
   )
@@ -325,6 +328,9 @@ function SemesterTab({ semesters, onAdd, onSetCurrent }: {
   )
 }
 
+const HM = /^([01][0-9]|2[0-3]):[0-5][0-9]$/
+const HM_MESSAGE = '請用 24 小時制 HH:MM'
+
 function PeriodsTab({ periods, onSave, onError }: {
   periods: Period[]
   onError: (m: string | null) => void
@@ -333,33 +339,40 @@ function PeriodsTab({ periods, onSave, onError }: {
   const [draft, setDraft] = useState<Record<number, { start: string; end: string }>>(() =>
     Object.fromEntries(periods.map((p) => [p.period, { start: p.start_time.slice(0, 5), end: p.end_time.slice(0, 5) }])),
   )
+  const label = Object.fromEntries(periods.map((p) => [p.period, labelFor(p)]))
   const set = (n: number, k: 'start' | 'end', v: string) =>
     setDraft((d) => ({ ...d, [n]: { ...d[n], [k]: v } }))
   return (
     <form className="space-y-2 text-sm"
       onSubmit={(e) => {
         e.preventDefault()
+        const lbl = (n: number) => label[n] ?? periodLabel(n)
+        // validated and saved in start-time order (period numbers do not follow time: 午休 is 8)
         const rows = Object.entries(draft)
           .map(([n, v]) => ({ period: Number(n), ...v }))
-          .sort((a, b) => a.period - b.period)
+          .sort((a, b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end) || a.period - b.period)
         for (const r of rows) {
-          if (r.end <= r.start) return onError(`第 ${r.period} 節結束時間必須晚於開始時間`)
+          if (!HM.test(r.start)) return onError(`${lbl(r.period)}開始時間：${HM_MESSAGE}`)
+          if (!HM.test(r.end)) return onError(`${lbl(r.period)}結束時間：${HM_MESSAGE}`)
+        }
+        for (const r of rows) {
+          if (r.end <= r.start) return onError(`${lbl(r.period)}結束時間必須晚於開始時間`)
         }
         for (let i = 1; i < rows.length; i++) {
           if (rows[i].start < rows[i - 1].end)
-            return onError(`第 ${rows[i].period} 節不能早於第 ${rows[i - 1].period} 節結束`)
+            return onError(`${lbl(rows[i].period)}不能早於${lbl(rows[i - 1].period)}結束`)
         }
         onError(null)
         onSave(rows)
       }}>
       {periods.map((p) => (
         <div key={p.period} className="flex items-center gap-2">
-          <span className="w-12">第 {p.period} 節</span>
-          <input type="time" aria-label={`第${p.period}節開始`} className={input} value={draft[p.period]?.start ?? ''}
-            required onChange={(e) => set(p.period, 'start', e.target.value)} />
+          <span className="w-14">{labelFor(p)}</span>
+          <input type="text" inputMode="numeric" maxLength={5} placeholder="HH:MM" aria-label={`${labelFor(p)}開始`} className={`${input} w-20`} value={draft[p.period]?.start ?? ''}
+            required onChange={(e) => set(p.period, 'start', e.target.value.trim())} />
           <span>~</span>
-          <input type="time" aria-label={`第${p.period}節結束`} className={input} value={draft[p.period]?.end ?? ''}
-            required onChange={(e) => set(p.period, 'end', e.target.value)} />
+          <input type="text" inputMode="numeric" maxLength={5} placeholder="HH:MM" aria-label={`${labelFor(p)}結束`} className={`${input} w-20`} value={draft[p.period]?.end ?? ''}
+            required onChange={(e) => set(p.period, 'end', e.target.value.trim())} />
         </div>
       ))}
       <button type="submit" className={btn}>儲存節次時間</button>

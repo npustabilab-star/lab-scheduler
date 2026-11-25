@@ -42,7 +42,12 @@ vi.mock('../lib/supabase', () => {
   }
 })
 vi.mock('../lib/semester', () => ({
-  loadSemesterAndPeriods: async () => ({ semesterId: 1, times: { 3: { start: '10:10', end: '11:00' } } }),
+  loadSemesterAndPeriods: async () => ({
+    semesterId: 1,
+    times: { 3: { start: '10:10', end: '11:00' } },
+    periods: [{ period: 3, label: '第3節', start: '10:10', end: '11:00' }],
+    labels: { 3: '第3節' },
+  }),
 }))
 vi.mock('../hooks/useTableChanges', () => ({ useTableChanges: () => undefined }))
 vi.mock('../auth/AuthProvider', () => ({ useAuth: () => h.auth }))

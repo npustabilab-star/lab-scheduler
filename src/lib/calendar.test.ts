@@ -1,49 +1,41 @@
 import { describe, expect, it } from 'vitest'
-import { toEvents } from './calendar'
+import { buildWeekCells, cellKey } from './calendar'
 
 const base = {
   roster: [] as { date: string; user_id: string; period: number }[],
   names: new Map<string, string>(),
   bookings: [] as { id: string; date: string; period: number; status: string; undergrad_name: string }[],
-  periodTimes: { 3: { start: '10:10', end: '11:00' } } as Record<number, { start: string; end: string }>,
-  uncovered: [] as string[],
-  noClassDays: [] as { date: string; note: string }[],
 }
 
-describe('toEvents', () => {
-  it('merges consecutive periods per grad per day into an all-day event', () => {
-    const ev = toEvents({
+describe('buildWeekCells', () => {
+  it('groups grads per date and period, sorted, skipping unknown ids', () => {
+    const cells = buildWeekCells({
       ...base,
-      names: new Map([['u1', '阿文']]),
-      roster: [1, 3, 4].map((period) => ({ date: '2026-03-02', user_id: 'u1', period })),
+      names: new Map([
+        ['a', '阿文'],
+        ['b', '小華'],
+      ]),
+      roster: [
+        { date: '2026-11-23', user_id: 'a', period: 3 },
+        { date: '2026-11-23', user_id: 'b', period: 3 },
+        { date: '2026-11-23', user_id: 'x', period: 3 },
+        { date: '2026-11-24', user_id: 'a', period: 5 },
+      ],
     })
-    expect(ev).toHaveLength(1)
-    expect(ev[0]).toMatchObject({ title: '阿文 1,3-4節', allDay: true, start: '2026-03-02' })
+    expect(cells.get(cellKey('2026-11-23', 3))?.names).toEqual(['小華', '阿文'])
+    expect(cells.get(cellKey('2026-11-24', 5))?.names).toEqual(['阿文'])
+    expect(cells.has(cellKey('2026-11-24', 3))).toBe(false)
   })
 
-  it('makes a timed meeting event, marking pending', () => {
-    const ev = toEvents({
+  it('labels meetings and marks pending; ignores other statuses', () => {
+    const cells = buildWeekCells({
       ...base,
-      bookings: [{ id: 'b1', date: '2026-03-09', period: 3, status: 'pending', undergrad_name: '王小美' }],
+      bookings: [
+        { id: '1', date: '2026-11-25', period: 3, status: 'pending', undergrad_name: '王小美' },
+        { id: '2', date: '2026-11-25', period: 3, status: 'confirmed', undergrad_name: '李大華' },
+        { id: '3', date: '2026-11-25', period: 3, status: 'cancelled', undergrad_name: '張三' },
+      ],
     })
-    expect(ev[0]).toMatchObject({
-      title: '會議：王小美（待確認）',
-      start: '2026-03-09T10:10',
-      end: '2026-03-09T11:00',
-    })
-  })
-
-  it('does not mark confirmed meetings', () => {
-    const ev = toEvents({
-      ...base,
-      bookings: [{ id: 'b1', date: '2026-03-09', period: 3, status: 'confirmed', undergrad_name: '王小美' }],
-    })
-    expect(ev[0].title).toBe('會議：王小美')
-  })
-
-  it('makes background events for uncovered and no-class days', () => {
-    const ev = toEvents({ ...base, uncovered: ['2026-03-03'], noClassDays: [{ date: '2026-03-04', note: '校慶' }] })
-    expect(ev[0]).toMatchObject({ display: 'background', className: 'uncovered', start: '2026-03-03' })
-    expect(ev[1]).toMatchObject({ display: 'background', className: 'no-class', title: '校慶', start: '2026-03-04' })
+    expect(cells.get(cellKey('2026-11-25', 3))?.meetings).toEqual(['會議：王小美（待確認）', '會議：李大華'])
   })
 })

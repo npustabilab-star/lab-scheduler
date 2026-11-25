@@ -17,6 +17,7 @@ const MESSAGES: Record<string, string> = {
   STUDENT_ID_EXISTS: '這個學號已經在名單中',
   EMAIL_REQUIRED: '老師必須填寫 Email',
   INVALID_STUDENT_ID: '學號至少 4 碼，只能包含英文字母、數字與 . _ -',
+  NOT_EDITABLE: '這一天不能修改（已過去、停課或不在學期內）',
   PASSWORD_NOT_CHANGED: '請先設定新的密碼',
 }
 

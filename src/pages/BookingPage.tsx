@@ -7,6 +7,7 @@ import { AppError, availableSlots, cancelBooking, createBooking } from '../lib/a
 import { BOOKING_SELECT, STATUS_LABEL, activeBooking, addDays, groupSlotsByWeek } from '../lib/booking'
 import type { BookingRow } from '../lib/booking'
 import { formatSlotLabel, slotKey } from '../lib/grid'
+import type { PeriodInfo } from '../lib/grid'
 import { createLatestOnly } from '../lib/latestOnly'
 import { loadSemesterAndPeriods } from '../lib/semester'
 import type { PeriodTimes } from '../lib/semester'
@@ -19,6 +20,8 @@ export default function BookingPage() {
   const [slots, setSlots] = useState<{ date: string; period: number }[]>([])
   const [bookings, setBookings] = useState<BookingRow[]>([])
   const [times, setTimes] = useState<PeriodTimes>({})
+  const [periods, setPeriods] = useState<PeriodInfo[]>([])
+  const [labels, setLabels] = useState<Record<number, string>>({})
   const [weekIdx, setWeekIdx] = useState(0)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -44,6 +47,8 @@ export default function BookingPage() {
       if (!isCurrent()) return
       if (bk.error) throw new Error(bk.error.message)
       setTimes(sp.times)
+      setPeriods(sp.periods)
+      setLabels(sp.labels)
       setSlots(sl)
       setBookings((bk.data ?? []) as unknown as BookingRow[])
       setLoadError(null)
@@ -102,7 +107,7 @@ export default function BookingPage() {
       {active ? (
         <section aria-label="進行中的預約" className="mb-4 rounded border p-3">
           <p className="font-medium">
-            {formatSlotLabel(active.date, active.period)}（{STATUS_LABEL[active.status]}）
+            {formatSlotLabel(active.date, active.period, labels)}（{STATUS_LABEL[active.status]}）
           </p>
           <p className="text-sm">老師 {active.teacher_ok ? '✓' : '⏳'}</p>
           <p className="text-sm">研究生 {active.grad_ok ? '✓' : '⏳'}</p>
@@ -137,7 +142,7 @@ export default function BookingPage() {
                 </button>
               </div>
               <WeekGrid
-                periodTimes={times}
+                periods={periods.length ? periods : undefined}
                 isOn={(w, p) => week.cells.has(slotKey(w, p))}
                 onToggle={(w, p) => {
                   if (week.cells.has(slotKey(w, p))) setPicked({ date: addDays(week.weekStart, w - 1), period: p })
@@ -155,7 +160,7 @@ export default function BookingPage() {
         <ul className="space-y-1">
           {history.map((b) => (
             <li key={b.id} className="break-words rounded border p-2 text-sm">
-              {formatSlotLabel(b.date, b.period)}　{STATUS_LABEL[b.status] ?? b.status}
+              {formatSlotLabel(b.date, b.period, labels)}　{STATUS_LABEL[b.status] ?? b.status}
               {b.reason && <span className="block text-gray-600">原因：{b.reason}</span>}
             </li>
           ))}
@@ -163,7 +168,7 @@ export default function BookingPage() {
       )}
       {picked && (
         <ReasonDialog
-          title={`預約 ${formatSlotLabel(picked.date, picked.period)}`}
+          title={`預約 ${formatSlotLabel(picked.date, picked.period, labels)}`}
           label="說明（想討論的內容）"
           confirmText="送出預約"
           onCancel={() => setPicked(null)}
