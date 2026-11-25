@@ -35,11 +35,18 @@ Deno.serve(async (req) => {
   if (bErr || !b) return json({ error: 'booking not found' }, 404)
 
   const [{ data: recipient }, { data: undergrad }, { data: period }] = await Promise.all([
-    db.from('profiles').select('email, display_name').eq('id', n.user_id).single(),
+    db.from('profiles').select('notify_email, display_name').eq('id', n.user_id).single(),
     db.from('profiles').select('display_name').eq('id', b.undergrad_id).single(),
     db.from('periods').select('start_time, end_time').eq('period', b.period).single(),
   ])
-  if (!recipient?.email || !undergrad || !period) return json({ error: 'missing related rows' }, 500)
+  if (!recipient || !undergrad || !period) return json({ error: 'missing related rows' }, 500)
+  if (!recipient.notify_email) {
+    // No address on file: nothing to send, but mark handled so it is not retried.
+    const { error: sErr } = await db
+      .from('notifications').update({ emailed_at: new Date().toISOString() }).eq('id', id)
+    if (sErr) return json({ error: 'failed to mark emailed_at' }, 500)
+    return json({ skipped: 'no email' })
+  }
 
   const input: EmailInput = {
     type: n.type,
@@ -65,7 +72,7 @@ Deno.serve(async (req) => {
     },
   })
   try {
-    await smtp.send({ from: user, to: recipient.email, subject, content: text })
+    await smtp.send({ from: user, to: recipient.notify_email, subject, content: text })
   } catch (e) {
     console.error('send failed:', e instanceof Error ? e.message : 'unknown error')
     return json({ error: 'send failed' }, 502)
