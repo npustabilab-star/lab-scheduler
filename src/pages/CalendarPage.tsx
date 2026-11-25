@@ -9,12 +9,12 @@ import { createLatestOnly } from '../lib/latestOnly'
 import type { PeriodInfo } from '../lib/grid'
 import { loadSemesterAndPeriods } from '../lib/semester'
 import { supabase } from '../lib/supabase'
-import { shiftWeek, taipeiToday, weekOf } from '../lib/week'
+import { shiftWeek, taipeiToday, thisWeekMonday, weekOf } from '../lib/week'
 
 const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e))
 
 export default function CalendarPage() {
-  const [monday, setMonday] = useState(() => weekOf(taipeiToday()).monday)
+  const [monday, setMonday] = useState(() => thisWeekMonday(taipeiToday()))
   const [cells, setCells] = useState<Map<string, CellContent>>(new Map())
   const [periods, setPeriods] = useState<PeriodInfo[]>([])
   const [uncovered, setUncovered] = useState<string[]>([])
@@ -81,7 +81,7 @@ export default function CalendarPage() {
       <WeekNav
         monday={monday}
         onPrev={() => setMonday((m) => shiftWeek(m, -1))}
-        onToday={() => setMonday(weekOf(taipeiToday()).monday)}
+        onToday={() => setMonday(thisWeekMonday(taipeiToday()))}
         onNext={() => setMonday((m) => shiftWeek(m, 1))}
       />
       <div className="overflow-x-auto" data-testid="calendar-scroll">

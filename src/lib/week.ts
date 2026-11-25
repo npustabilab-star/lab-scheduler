@@ -20,6 +20,13 @@ export function weekOf(date: string): { monday: string; days: string[] } {
   return { monday: fmt(mondayT), days: [0, 1, 2, 3, 4].map((i) => fmt(mondayT + i * DAY_MS)) }
 }
 
+/** The Monday "this week" should show: on Sat/Sun that is the coming Monday (no class days left). */
+export function thisWeekMonday(today: string): string {
+  const { monday } = weekOf(today)
+  const isodow = new Date(parse(today)).getUTCDay() || 7
+  return isodow >= 6 ? addDaysStr(monday, 7) : monday
+}
+
 export const shiftWeek = (monday: string, delta: number): string => addDaysStr(monday, delta * 7)
 
 /** '2026-11-23' -> '2026/11/23（一）～ 11/27（五）' (year repeated on the Friday only when it differs). */

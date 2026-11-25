@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { shiftWeek, taipeiToday, weekOf, weekRangeLabel } from './week'
+import { shiftWeek, taipeiToday, thisWeekMonday, weekOf, weekRangeLabel } from './week'
 
 describe('week helpers', () => {
   it('weekOf a Wednesday', () => {
@@ -12,6 +12,13 @@ describe('week helpers', () => {
     const w = weekOf('2026-11-29')
     expect(w.monday).toBe('2026-11-23')
     expect(w.days[4]).toBe('2026-11-27')
+  })
+  it('thisWeekMonday: weekdays stay, Sat/Sun move to the next Monday', () => {
+    expect(thisWeekMonday('2026-11-23')).toBe('2026-11-23')
+    expect(thisWeekMonday('2026-11-27')).toBe('2026-11-23')
+    expect(thisWeekMonday('2026-11-28')).toBe('2026-11-30')
+    expect(thisWeekMonday('2026-11-29')).toBe('2026-11-30')
+    expect(thisWeekMonday('2026-12-31')).toBe('2026-12-28')
   })
   it('shiftWeek crosses month boundaries both ways', () => {
     expect(shiftWeek('2026-11-23', 1)).toBe('2026-11-30')
