@@ -6,6 +6,7 @@ const MESSAGES: Record<string, string> = {
   NOT_ADMIN: '需要管理者權限',
   INVALID_MENTOR: '指導研究生必須是已啟用的研究生',
   LAST_ADMIN: '至少要保留一位管理者',
+  ONLY_TEACHER: '只有老師可以設定管理者或停用管理者',
   NOT_CANCELLABLE: '這筆預約已無法取消',
   NO_SEMESTER: '管理者尚未設定學期',
   USER_NOT_FOUND: '找不到這位使用者',

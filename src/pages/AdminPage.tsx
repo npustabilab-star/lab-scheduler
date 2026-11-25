@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useAuth } from '../auth/AuthProvider'
 import ImpactDialog from '../components/ImpactDialog'
 import { useTableChanges } from '../hooks/useTableChanges'
 import * as api from '../lib/api'
@@ -30,6 +31,8 @@ async function must<T>(p: PromiseLike<{ data: T | null; error: { message: string
 }
 
 export default function AdminPage() {
+  const { profile: me } = useAuth()
+  const isTeacher = me?.role === 'teacher'
   const [tab, setTab] = useState<Tab>('成員')
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [semesters, setSemesters] = useState<Semester[]>([])
@@ -147,17 +150,21 @@ export default function AdminPage() {
                         {grads.map((g) => <option key={g.id} value={g.id}>{g.display_name}</option>)}
                       </select>
                     )}
-                    <button type="button" className={btn}
-                      onClick={() =>
-                        void act(() =>
-                          runWithImpact((c) => api.setAccountStatus(p.id, p.status === 'active' ? 'disabled' : 'active', c), ask),
-                        )
-                      }>
-                      {p.status === 'active' ? '停用' : '啟用'}
-                    </button>
-                    <button type="button" className={btn} onClick={() => void act(() => api.setAdmin(p.id, !p.is_admin))}>
-                      {p.is_admin ? '取消管理者' : '設為管理者'}
-                    </button>
+                    {(isTeacher || (p.role !== 'teacher' && !p.is_admin)) && (
+                      <button type="button" className={btn}
+                        onClick={() =>
+                          void act(() =>
+                            runWithImpact((c) => api.setAccountStatus(p.id, p.status === 'active' ? 'disabled' : 'active', c), ask),
+                          )
+                        }>
+                        {p.status === 'active' ? '停用' : '啟用'}
+                      </button>
+                    )}
+                    {isTeacher && (
+                      <button type="button" className={btn} onClick={() => void act(() => api.setAdmin(p.id, !p.is_admin))}>
+                        {p.is_admin ? '取消管理者' : '設為管理者'}
+                      </button>
+                    )}
                     <button type="button" className={btn}
                       onClick={() => {
                         if (window.confirm(`確定要把 ${p.display_name} 的密碼重設為學號後四碼？`))

@@ -40,7 +40,7 @@
    npx supabase db push --remote
    ```
    - **一定要加 `--remote`**：這個版本的 CLI 在沒有 `--remote` 時會把 migration 推到本機（Docker）資料庫，而不是雲端。
-   - 檢查雲端已套用哪些 migration：`npx supabase migration list --remote`，每個 migration 的「Remote」欄都要有值，而且最新的那個 migration（`20261125000015`，每週時段可指定日期）也已套用。要確認雲端已是最新，看 `migration list --remote` 最後一列是不是 `20261125000015` 且 Remote 欄有值；中間的 `20261125000011`（API 權限 GRANT）、`000012`–`000014`（單日調整、七節＋午休）也都要有值。
+   - 檢查雲端已套用哪些 migration：`npx supabase migration list --remote`，每個 migration 的「Remote」欄都要有值，而且最新的那個 migration（`20261125000016`，只有老師能管理管理者）也已套用。要確認雲端已是最新，看 `migration list --remote` 最後一列是不是 `20261125000016` 且 Remote 欄有值；中間的 `20261125000011`（API 權限 GRANT）、`000012`–`000015`（單日調整、七節＋午休、每週時段可指定日期）也都要有值。
    - **規則**：新增資料表或函式時，必須在 migration 裡明確 GRANT（雲端預設不給任何權限）。本機已與雲端一致（default privileges 已撤銷），漏寫 GRANT 時 `npx supabase test db` 會失敗。
 3. Realtime：migration `20261124000008_realtime.sql` 會把前端訂閱的資料表（weekly_slots、slot_exceptions、bookings、no_class_days、notifications、profiles、semesters、periods）加入 `supabase_realtime` publication，不需要另外手動設定。推送後請到 Dashboard → Database → Publications，確認 `supabase_realtime` 列出這 8 張表；若沒有，畫面不會即時更新（需要重新整理才看得到變動）。
 4. 在 Dashboard 的 SQL Editor 設定 vault 密碼（寄信的資料庫 trigger 會用到）：
@@ -178,7 +178,7 @@ git push
 - **重設密碼**：沒有「忘記密碼」信件功能。成員忘記密碼時，由管理者在該成員列按「重設密碼」，密碼會被重設為學號後四碼，該成員下次登入需重新改密碼。**忘記密碼 = 管理者重設**。
 - **修改 Email**：在該成員列的「通知 Email」欄位修改，按「儲存 Email」。
 - **停用／啟用**：成員離開時按「停用」，不要刪除資料。
-- **管理者**：可以在成員列切換是否為管理者。
+- **管理者**：只有老師可以設定或取消管理者，也只有老師能停用老師或其他管理者；其他管理者仍可停用一般成員。
 
 ## 11. 每學期開學
 

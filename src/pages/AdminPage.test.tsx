@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -15,6 +15,7 @@ const h = vi.hoisted(() => ({
   failPeriod: 0,
   semesterInsertError: null as { message: string; code: string } | null,
   periodUpdates: [] as number[],
+  auth: { profile: { id: 'tt', role: 'teacher' } as { id: string; role: string } },
 }))
 
 vi.mock('../lib/api', async () => {
@@ -53,6 +54,7 @@ vi.mock('../lib/supabase', () => ({
   },
 }))
 vi.mock('../hooks/useTableChanges', () => ({ useTableChanges: () => undefined }))
+vi.mock('../auth/AuthProvider', () => ({ useAuth: () => h.auth }))
 
 import { AppError } from '../lib/api'
 import AdminPage from './AdminPage'
@@ -67,6 +69,35 @@ beforeEach(() => {
   h.failPeriod = 0
   h.semesterInsertError = null
   h.periodUpdates = []
+  h.auth.profile = { id: 'tt', role: 'teacher' }
+})
+
+describe('AdminPage admin-rights buttons', () => {
+  const teacherRow = { ...grad, id: 't1', display_name: '老師', role: 'teacher', is_admin: true }
+  const adminRow = { ...grad, id: 'a1', display_name: '管理學長', is_admin: true }
+  const ordinary = { ...grad, id: 'g2', display_name: '一般學姐' }
+  const rowOf = (name: string) => screen.getAllByText(name).map((e) => e.closest('li')).find(Boolean) as HTMLElement
+
+  it('teacher sees 設為管理者/取消管理者 and 停用 on every row', async () => {
+    h.tables.profiles = [teacherRow, adminRow, ordinary]
+    render(<AdminPage />)
+    await screen.findAllByText('管理學長')
+    expect(within(rowOf('一般學姐')).getByRole('button', { name: '設為管理者' })).toBeTruthy()
+    expect(within(rowOf('管理學長')).getByRole('button', { name: '取消管理者' })).toBeTruthy()
+    expect(within(rowOf('老師')).getByRole('button', { name: '停用' })).toBeTruthy()
+    expect(within(rowOf('管理學長')).getByRole('button', { name: '停用' })).toBeTruthy()
+  })
+
+  it('non-teacher admin sees no admin toggle and no 停用 on the teacher or admins', async () => {
+    h.auth.profile = { id: 'a1', role: 'grad' }
+    h.tables.profiles = [teacherRow, adminRow, ordinary]
+    render(<AdminPage />)
+    await screen.findAllByText('管理學長')
+    expect(screen.queryByRole('button', { name: /管理者$/ })).toBeNull()
+    expect(within(rowOf('老師')).queryByRole('button', { name: '停用' })).toBeNull()
+    expect(within(rowOf('管理學長')).queryByRole('button', { name: '停用' })).toBeNull()
+    expect(within(rowOf('一般學姐')).getByRole('button', { name: '停用' })).toBeTruthy()
+  })
 })
 
 describe('AdminPage member creation', () => {
