@@ -36,6 +36,14 @@ export function validateCreateInput(x: unknown): ValidateResult {
   return { ok: true, value: { student_id, display_name, role, mentor_id, notify_email } }
 }
 
+/** Normalized student id, or a Chinese error message. */
+export function checkStudentId(x: unknown): { ok: true; value: string } | { ok: false; message: string } {
+  const id = normalizeStudentId(str(x))
+  if (id.length < 4) return { ok: false, message: '學號至少 4 碼' }
+  if (!STUDENT_ID_RE.test(id)) return { ok: false, message: '學號只能包含英文字母、數字與 . _ -' }
+  return { ok: true, value: id }
+}
+
 export function requireAdmin(
   profile: { status: string; is_admin: boolean; must_change_password: boolean } | null,
 ): boolean {

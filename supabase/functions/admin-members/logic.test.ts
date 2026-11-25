@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { initialPassword, loginEmail, normalizeStudentId, toAuthPassword } from '../_shared/credentials'
-import { dbErrorMessage, requireAdmin, validateCreateInput } from './logic'
+import { checkStudentId, dbErrorMessage, requireAdmin, validateCreateInput } from './logic'
 
 describe('credentials', () => {
   it('normalizes, derives email, password', () => {
@@ -106,5 +106,13 @@ describe('isValidStudentId (scripts) agrees with logic.ts', () => {
     const m = await import('../../../scripts/credentials.mjs')
     expect(m.isValidStudentId(id)).toBe(expected)
     expect(validateCreateInput({ student_id: id, display_name: 'a', role: 'grad' }).ok).toBe(expected)
+  })
+})
+
+describe('checkStudentId', () => {
+  it('normalizes and validates', () => {
+    expect(checkStudentId(' B11258007 ')).toEqual({ ok: true, value: 'b11258007' })
+    expect(checkStudentId('ab')).toEqual({ ok: false, message: '學號至少 4 碼' })
+    expect(checkStudentId('ab cd')).toMatchObject({ ok: false })
   })
 })

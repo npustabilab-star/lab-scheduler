@@ -1,7 +1,7 @@
 // Supabase Edge Function (Deno): admin creates members / resets passwords.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { initialPassword, loginEmail, toAuthPassword } from '../_shared/credentials.ts'
-import { dbErrorMessage, GENERIC_ERROR, requireAdmin, validateCreateInput } from './logic.ts'
+import { checkStudentId, dbErrorMessage, GENERIC_ERROR, requireAdmin, validateCreateInput } from './logic.ts'
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
   const { data: u } = token ? await db.auth.getUser(token) : { data: { user: null } }
   if (!u.user) return fail('需要管理者權限', 403)
   const { data: caller } = await db
-    .from('profiles').select('status, is_admin, must_change_password').eq('id', u.user.id).maybeSingle()
+    .from('profiles').select('status, is_admin, must_change_password, role').eq('id', u.user.id).maybeSingle()
   if (!requireAdmin(caller)) return fail('需要管理者權限', 403)
 
   let body: Record<string, unknown>
@@ -84,6 +84,35 @@ Deno.serve(async (req) => {
     if (fErr) {
       console.error('admin_reset_flag failed after password update', userId, fErr.message)
       return fail(dbErrorMessage(fErr))
+    }
+    return json({ ok: true })
+  }
+
+  if (body.action === 'change_student_id') {
+    const userId = typeof body.user_id === 'string' ? body.user_id : ''
+    const v = checkStudentId(body.student_id)
+    if (!userId) return fail('請求格式不正確')
+    if (!v.ok) return fail(v.message)
+    const { data: p } = await db.from('profiles').select('student_id, role').eq('id', userId).maybeSingle()
+    if (!p) return fail('找不到這位成員')
+    if (p.role === 'teacher' && caller?.role !== 'teacher') return fail('只有老師可以修改老師的資料', 403)
+    if (p.student_id === v.value) return json({ ok: true })
+    const { data: dup } = await db.from('profiles').select('id').eq('student_id', v.value).maybeSingle()
+    if (dup) return fail('這個學號已經在名單中')
+    // login email follows the student id; password is unchanged
+    const { error: uErr } = await db.auth.admin.updateUserById(userId, { email: loginEmail(v.value), email_confirm: true })
+    if (uErr) {
+      const taken = uErr.code === 'email_exists' || /already|registered/i.test(uErr.message ?? '')
+      if (!taken) console.error('updateUserById(email) failed:', uErr.message)
+      return fail(taken ? '這個學號已經在名單中' : GENERIC_ERROR)
+    }
+    const { error: pErr } = await db.from('profiles').update({ student_id: v.value }).eq('id', userId)
+    if (pErr) {
+      const { error: rErr } = p.student_id
+        ? await db.auth.admin.updateUserById(userId, { email: loginEmail(p.student_id), email_confirm: true })
+        : { error: null }
+      if (rErr) console.error('rollback email failed', userId, rErr.message)
+      return fail(dbErrorMessage(pErr))
     }
     return json({ ok: true })
   }

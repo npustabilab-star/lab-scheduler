@@ -176,6 +176,13 @@ export default function AdminPage() {
                   {(isTeacher || p.role !== 'teacher') && (
                     <RenameMember key={`name-${p.display_name}`} profile={p} onSave={(name) => void act(() => api.setDisplayName(p.id, name))} />
                   )}
+                  {(isTeacher || p.role !== 'teacher') && (
+                    <ChangeStudentId key={`sid-${p.student_id}`} profile={p}
+                      onSave={(sid) => {
+                        if (window.confirm(`確定把 ${p.display_name} 的學號改成 ${sid}？之後要用新學號登入（密碼不變）。`))
+                          void act(() => api.changeStudentId(p.id, sid))
+                      }} />
+                  )}
                   <NotifyEmail key={p.notify_email ?? ''} profile={p} onSave={(email) => void act(() => api.setNotifyEmail(p.id, email))} />
                 </li>
               ))}
@@ -301,6 +308,22 @@ function RenameMember({ profile, onSave }: { profile: Profile; onSave: (name: st
       <input aria-label={`${profile.display_name}的姓名`} className={input} value={name} maxLength={30}
         placeholder="姓名" onChange={(e) => setName(e.target.value)} />
       <button type="submit" className={btn}>更改名稱</button>
+    </form>
+  )
+}
+
+function ChangeStudentId({ profile, onSave }: { profile: Profile; onSave: (sid: string) => void }) {
+  const [sid, setSid] = useState(profile.student_id ?? '')
+  return (
+    <form className="mt-1 flex flex-wrap items-center gap-2"
+      onSubmit={(e) => {
+        e.preventDefault()
+        const v = sid.trim().toLowerCase()
+        if (v && v !== profile.student_id) onSave(v)
+      }}>
+      <input aria-label={`${profile.display_name}的學號`} className={input} value={sid}
+        placeholder="學號" onChange={(e) => setSid(e.target.value)} />
+      <button type="submit" className={btn}>更改學號</button>
     </form>
   )
 }

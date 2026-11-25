@@ -107,6 +107,10 @@ export const createMember = (input: CreateInput) => adminMembers({ action: 'crea
 
 export const resetMemberPassword = (userId: string) => adminMembers({ action: 'reset_password', user_id: userId })
 
+/** Admin: change a member's student id (also their login id). Password stays the same. */
+export const changeStudentId = (userId: string, studentId: string) =>
+  adminMembers({ action: 'change_student_id', user_id: userId, student_id: studentId })
+
 export const setNotifyEmail = (userId: string, email: string) =>
   call(supabase.rpc('set_notify_email', { p_user: userId, p_email: email })).then(() => undefined)
 
