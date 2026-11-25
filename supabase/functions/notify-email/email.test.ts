@@ -23,6 +23,13 @@ describe('buildEmail', () => {
     expect(text).toContain('https://lab.example.com')
   })
 
+  it('lunch slot uses the period label, not 第8節', () => {
+    const { subject, text } = buildEmail({ ...base, period: 8, periodLabel: '午休', startTime: '13:00', endTime: '13:20' })
+    expect(subject).toBe('【研究室】王小美 預約 3/9（一）午休，待你確認')
+    expect(subject).not.toContain('第8節')
+    expect(text).toContain('2026-03-09 3/9（一）午休 13:00–13:20')
+  })
+
   it('weekday label', () => {
     expect(buildEmail({ ...base, date: '2026-03-13' }).subject).toContain('3/13（五）')
   })

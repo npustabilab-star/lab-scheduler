@@ -6,6 +6,7 @@ export type EmailInput = {
   undergradName: string
   date: string // YYYY-MM-DD
   period: number
+  periodLabel?: string // periods.label (e.g. '第3節', '午休'); falls back to 第N節
   startTime: string // HH:MM
   endTime: string
   note: string
@@ -23,7 +24,7 @@ function dateLabel(date: string): string {
 }
 
 export function buildEmail(i: EmailInput): { subject: string; text: string } {
-  const when = `${dateLabel(i.date)}第${i.period}節`
+  const when = `${dateLabel(i.date)}${i.periodLabel || `第${i.period}節`}`
   const subject = {
     booking_requested: `【研究室】${i.undergradName} 預約 ${when}，待你確認`,
     booking_confirmed: `【研究室】預約已成立：${i.undergradName} ${when}`,

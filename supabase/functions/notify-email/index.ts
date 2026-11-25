@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
   const [{ data: recipient }, { data: undergrad }, { data: period }] = await Promise.all([
     db.from('profiles').select('notify_email, display_name').eq('id', n.user_id).single(),
     db.from('profiles').select('display_name').eq('id', b.undergrad_id).single(),
-    db.from('periods').select('start_time, end_time').eq('period', b.period).single(),
+    db.from('periods').select('start_time, end_time, label').eq('period', b.period).single(),
   ])
   if (!recipient || !undergrad || !period) return json({ error: 'missing related rows' }, 500)
   if (!recipient.notify_email) {
@@ -54,6 +54,7 @@ Deno.serve(async (req) => {
     undergradName: undergrad.display_name,
     date: b.date,
     period: b.period,
+    periodLabel: period.label,
     startTime: hhmm(period.start_time),
     endTime: hhmm(period.end_time),
     note: b.note ?? '',
