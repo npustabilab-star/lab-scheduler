@@ -1,0 +1,10 @@
+{
+  // Cloudflare Workers 靜態網站設定。部署：npm run build 之後執行 npx wrangler deploy
+  "name": "lab-scheduler",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist",
+    // 單頁網站：/calendar 之類的子頁面一律回傳 index.html，由前端路由處理
+    "not_found_handling": "single-page-application"
+  }
+}
