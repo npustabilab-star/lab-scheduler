@@ -13,6 +13,18 @@ const LABELS: Record<NotificationRow['type'], string> = {
   booking_expired: '預約已逾期失效',
 }
 
+const TIME_FMT = new Intl.DateTimeFormat('zh-TW', {
+  timeZone: 'Asia/Taipei',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+})
+/** 24h Taipei time, e.g. '2026/03/09 14:05' (never 上午/下午). */
+export const formatNotificationTime = (iso: string): string => TIME_FMT.format(new Date(iso))
+
 export default function NotificationBell() {
   const { profile } = useAuth()
   const [items, setItems] = useState<NotificationRow[]>([])
@@ -62,7 +74,7 @@ export default function NotificationBell() {
           {items.map((n) => (
             <li key={n.id} className="border-b p-3 text-sm last:border-b-0">
               <div>{LABELS[n.type]}</div>
-              <div className="text-xs text-gray-500">{new Date(n.created_at).toLocaleString('zh-TW')}</div>
+              <div className="text-xs text-gray-500">{formatNotificationTime(n.created_at)}</div>
             </li>
           ))}
         </ul>
