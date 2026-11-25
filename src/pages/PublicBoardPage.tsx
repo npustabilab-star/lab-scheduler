@@ -80,7 +80,7 @@ export default function PublicBoardPage() {
           <HeroArt className="hidden h-28 w-auto shrink-0 sm:block" />
         </section>
         <div className="card p-2 sm:p-4">
-        <h1 className="mb-2 text-2xl font-bold sm:text-3xl">{semesterName ? `${semesterName}學期研究室班表` : '研究室班表'}</h1>
+        <h1 className="mb-2 text-2xl font-bold sm:text-3xl">{semesterName ? `${semesterName}學期ABI Lab班表` : 'ABI Lab班表'}</h1>
         <p className="mb-2 text-base text-gray-600">
           每一節在研究室的研究生，<span className="rounded bg-amber-100 px-1 text-amber-800">黃色</span>為老師在校時間，★ 為主值
         </p>
