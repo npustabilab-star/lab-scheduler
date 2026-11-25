@@ -52,20 +52,20 @@ export default function PublicBoardPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="brand-gradient flex items-center justify-between gap-2 px-3 py-2 text-white shadow-md">
+      <header className="brand-gradient flex items-center justify-between gap-2 px-3 py-2 text-sky-950 shadow-md">
         <span className="flex min-w-0 items-center gap-2">
-          <LabLogo className="h-9 w-9 shrink-0 rounded-xl ring-2 ring-white/40" />
+          <LabLogo className="h-9 w-9 shrink-0 rounded-xl ring-2 ring-white/70" />
           <span className="min-w-0 text-sm leading-tight font-bold sm:text-base">
             {LAB_NAME}
-            <span className="block text-xs font-normal text-indigo-100">排班系統</span>
+            <span className="block text-xs font-normal text-sky-800">排班系統</span>
           </span>
         </span>
         {session && profile ? (
-          <Link to={homeFor(profile)} className="shrink-0 rounded-full bg-white px-4 py-1.5 text-sm font-bold text-indigo-700 shadow">
+          <Link to={homeFor(profile)} className="shrink-0 rounded-full bg-white px-4 py-1.5 text-sm font-bold text-sky-700 shadow">
             進入系統
           </Link>
         ) : (
-          <Link to="/login" className="shrink-0 rounded-full bg-white px-4 py-1.5 text-sm font-bold text-indigo-700 shadow">
+          <Link to="/login" className="shrink-0 rounded-full bg-white px-4 py-1.5 text-sm font-bold text-sky-700 shadow">
             登入
           </Link>
         )}
@@ -74,13 +74,13 @@ export default function PublicBoardPage() {
         <section className="card flex items-center justify-between gap-4 overflow-hidden p-4">
           <div>
             <p className="text-sm font-medium text-cyan-700">誰在研究室？</p>
-            <p className="text-2xl font-bold text-indigo-900">本週值班總表</p>
+            <p className="text-2xl font-bold text-sky-900">本週值班總表</p>
             <p className="mt-1 text-sm text-slate-600">找人前先看看這裡，每一節都有標示在研究室的研究生。</p>
           </div>
           <HeroArt className="hidden h-28 w-auto shrink-0 sm:block" />
         </section>
         <div className="card p-2 sm:p-4">
-        <h1 className="mb-2 text-xl font-bold">{semesterName ? `${semesterName} 總表` : '總表'}</h1>
+        <h1 className="mb-2 text-xl font-bold">{semesterName ? `${semesterName}學期研究室班表` : '研究室班表'}</h1>
         <p className="mb-2 text-sm text-gray-600">
           每一節在研究室的研究生，<span className="rounded bg-amber-100 px-1 text-amber-800">黃色</span>為老師在校時間，★ 為主值
         </p>

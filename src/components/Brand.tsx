@@ -8,8 +8,8 @@ export function LabLogo({ className = 'h-9 w-9' }: { className?: string }) {
     <svg viewBox="0 0 48 48" className={className} aria-hidden="true">
       <defs>
         <linearGradient id="lab-logo-bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#6366f1" />
-          <stop offset="1" stopColor="#06b6d4" />
+          <stop offset="0" stopColor="#80D9FF" />
+          <stop offset="1" stopColor="#1e9fd6" />
         </linearGradient>
       </defs>
       <rect width="48" height="48" rx="12" fill="url(#lab-logo-bg)" />
@@ -45,22 +45,22 @@ export function HeroArt({ className = 'h-32 w-auto' }: { className?: string }) {
       <defs>
         <linearGradient id="hero-card" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#ffffff" />
-          <stop offset="1" stopColor="#eef2ff" />
+          <stop offset="1" stopColor="#eefaff" />
         </linearGradient>
         <linearGradient id="hero-bar" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#22d3ee" />
-          <stop offset="1" stopColor="#6366f1" />
+          <stop offset="1" stopColor="#1e9fd6" />
         </linearGradient>
       </defs>
       <circle cx="260" cy="40" r="46" fill="#a5f3fc" opacity="0.45" />
-      <circle cx="60" cy="150" r="40" fill="#c7d2fe" opacity="0.5" />
+      <circle cx="60" cy="150" r="40" fill="#bfeaff" opacity="0.5" />
       <g transform="translate(40 28)">
-        <rect width="150" height="118" rx="14" fill="url(#hero-card)" stroke="#c7d2fe" />
-        <rect width="150" height="30" rx="14" fill="#6366f1" />
-        <rect y="16" width="150" height="14" fill="#6366f1" />
-        <circle cx="30" cy="8" r="4" fill="#e0e7ff" />
-        <circle cx="120" cy="8" r="4" fill="#e0e7ff" />
-        <g fill="#e0e7ff">
+        <rect width="150" height="118" rx="14" fill="url(#hero-card)" stroke="#bfeaff" />
+        <rect width="150" height="30" rx="14" fill="#1e9fd6" />
+        <rect y="16" width="150" height="14" fill="#1e9fd6" />
+        <circle cx="30" cy="8" r="4" fill="#d9f4ff" />
+        <circle cx="120" cy="8" r="4" fill="#d9f4ff" />
+        <g fill="#d9f4ff">
           {[0, 1, 2, 3, 4].map((c) =>
             [0, 1, 2].map((r) => <rect key={`${c}-${r}`} x={14 + c * 26} y={42 + r * 24} width="18" height="16" rx="4" />),
           )}
@@ -77,13 +77,13 @@ export function HeroArt({ className = 'h-32 w-auto' }: { className?: string }) {
         <rect x="58" y="14" width="12" height="46" rx="3" fill="url(#hero-bar)" />
         <polyline points="20,34 42,22 64,10" fill="none" stroke="#f472b6" strokeWidth="2.5" strokeLinecap="round" />
       </g>
-      <g stroke="#818cf8" strokeWidth="1.5">
+      <g stroke="#56c6f5" strokeWidth="1.5">
         <line x1="222" y1="40" x2="250" y2="26" />
         <line x1="222" y1="40" x2="252" y2="56" />
         <line x1="250" y1="26" x2="282" y2="40" />
         <line x1="252" y1="56" x2="282" y2="40" />
       </g>
-      <g fill="#6366f1">
+      <g fill="#1e9fd6">
         <circle cx="222" cy="40" r="6" />
         <circle cx="250" cy="26" r="5" fill="#06b6d4" />
         <circle cx="252" cy="56" r="5" fill="#06b6d4" />

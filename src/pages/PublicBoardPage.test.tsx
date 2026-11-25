@@ -31,7 +31,7 @@ describe('PublicBoardPage', () => {
       </MemoryRouter>,
     )
     expect(await screen.findByText('小明、小華')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: '115-1 總表' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '115-1學期研究室班表' })).toBeInTheDocument()
     expect(screen.getByText('徐明龍老師')).toBeInTheDocument()
     expect(h.publicBoard).toHaveBeenCalledWith('2026-11-23', '2026-11-27')
     expect(screen.getAllByText('午休').length).toBeGreaterThan(0)

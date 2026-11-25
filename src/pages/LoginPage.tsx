@@ -31,10 +31,10 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="card grid w-full max-w-3xl overflow-hidden md:grid-cols-2">
-      <div className="brand-gradient flex flex-col items-center justify-center gap-3 p-6 text-white">
-        <LabLogo className="h-14 w-14 rounded-2xl ring-4 ring-white/30" />
+      <div className="brand-gradient flex flex-col items-center justify-center gap-3 p-6 text-sky-950">
+        <LabLogo className="h-14 w-14 rounded-2xl ring-4 ring-white/70" />
         <p className="text-center text-lg leading-snug font-bold">{LAB_NAME}</p>
-        <p className="text-indigo-100">排班系統</p>
+        <p className="text-sky-800">排班系統</p>
         <div className="rounded-2xl bg-white/90 p-2">
           <HeroArt className="h-28 w-auto" />
         </div>
@@ -43,20 +43,20 @@ export default function LoginPage() {
       <h1 className="text-center text-2xl font-bold">登入</h1>
       <form onSubmit={(e) => void submit(e)} className="flex w-full max-w-xs flex-col gap-3">
         <label className="flex flex-col gap-1 text-sm">學號
-          <input className="rounded-xl border border-indigo-200 px-3 py-2 focus:border-indigo-500 focus:outline-none" value={studentId} required autoComplete="username"
+          <input className="rounded-xl border border-sky-200 px-3 py-2 focus:border-sky-500 focus:outline-none" value={studentId} required autoComplete="username"
             onChange={(e) => setStudentId(e.target.value)} />
         </label>
         <label className="flex flex-col gap-1 text-sm">密碼
-          <input type="password" className="rounded-xl border border-indigo-200 px-3 py-2 focus:border-indigo-500 focus:outline-none" value={password} required
+          <input type="password" className="rounded-xl border border-sky-200 px-3 py-2 focus:border-sky-500 focus:outline-none" value={password} required
             autoComplete="current-password" onChange={(e) => setPassword(e.target.value)} />
         </label>
         <p className="text-xs text-gray-600">第一次登入的密碼為學號後四碼（英文字母請用小寫）</p>
         {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-        <button type="submit" disabled={busy} className="brand-gradient rounded-xl px-5 py-3 font-bold text-white shadow-md disabled:opacity-50">
+        <button type="submit" disabled={busy} className="bg-lab rounded-xl px-5 py-3 font-bold text-sky-950 shadow-md disabled:opacity-50">
           登入
         </button>
       </form>
-      <a href="/" className="text-sm text-indigo-600 underline">← 回到總表</a>
+      <a href="/" className="text-sm text-sky-600 underline">← 回到總表</a>
       </div>
       </div>
     </div>

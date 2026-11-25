@@ -109,7 +109,7 @@ export default function MasterPage() {
     : []
   return (
     <div className="p-2">
-      <h1 className="mb-2 text-xl font-bold">{semesterName ? `${semesterName} 總表` : '總表'}</h1>
+      <h1 className="mb-2 text-xl font-bold">{semesterName ? `${semesterName}學期研究室班表` : '研究室班表'}</h1>
       {error && (
         <p role="alert" className="mb-2 rounded bg-red-100 p-2 text-sm text-red-700">
           {error}
