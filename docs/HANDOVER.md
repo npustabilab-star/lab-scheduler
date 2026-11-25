@@ -40,7 +40,8 @@
    npx supabase db push --remote
    ```
    - **一定要加 `--remote`**：這個版本的 CLI 在沒有 `--remote` 時會把 migration 推到本機（Docker）資料庫，而不是雲端。
-   - 檢查雲端已套用哪些 migration：`npx supabase migration list --remote`，每個 migration 的「Remote」欄都要有值（包含 `20261125000010`，學號登入）。
+   - 檢查雲端已套用哪些 migration：`npx supabase migration list --remote`，每個 migration 的「Remote」欄都要有值（包含 `20261125000011`，API 權限 GRANT）。
+   - **規則**：新增資料表或函式時，必須在 migration 裡明確 GRANT（雲端預設不給任何權限）。本機已與雲端一致（default privileges 已撤銷），漏寫 GRANT 時 `npx supabase test db` 會失敗。
 3. Realtime：migration `20261124000008_realtime.sql` 會把前端訂閱的資料表（weekly_slots、slot_exceptions、bookings、no_class_days、notifications、profiles、semesters、periods）加入 `supabase_realtime` publication，不需要另外手動設定。推送後請到 Dashboard → Database → Publications，確認 `supabase_realtime` 列出這 8 張表；若沒有，畫面不會即時更新（需要重新整理才看得到變動）。
 4. 在 Dashboard 的 SQL Editor 設定 vault 密碼（寄信的資料庫 trigger 會用到）：
    ```sql

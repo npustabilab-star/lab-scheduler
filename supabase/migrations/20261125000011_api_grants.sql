@@ -2,10 +2,19 @@
 -- Hosted Supabase projects no longer auto-grant privileges on objects created by
 -- migrations (the local stack still does). Without grants every API call fails with
 -- "permission denied". Start from a clean slate so local and hosted end in the same state.
+--
+-- RULE: 新增資料表或函式時，必須在 migration 裡明確 GRANT（雲端預設不給任何權限）.
+-- Any new table / function / sequence needs its own explicit GRANT in its migration.
+-- supabase/tests/10_api_grants.test.sql fails when a new object has no grant decision.
 
 revoke all on all tables in schema public from anon, authenticated, service_role;
 revoke all on all sequences in schema public from anon, authenticated, service_role;
 revoke execute on all functions in schema public from public, anon, authenticated, service_role;
+
+-- future objects created by postgres get no automatic privileges (same as hosted)
+alter default privileges for role postgres in schema public revoke all on tables from anon, authenticated, service_role;
+alter default privileges for role postgres in schema public revoke all on sequences from anon, authenticated, service_role;
+alter default privileges for role postgres in schema public revoke all on functions from public, anon, authenticated, service_role;
 
 grant usage on schema public to anon, authenticated, service_role;
 
@@ -17,7 +26,7 @@ grant execute on all functions in schema public to service_role;
 -- authenticated: browser users. Row level security is the gate (every table has RLS on).
 grant select on all tables in schema public to authenticated;
 grant insert, update, delete on table semesters, periods to authenticated;  -- admin-only via RLS
-grant usage, select on all sequences in schema public to authenticated;
+grant usage, select on sequence semesters_id_seq to authenticated;  -- identity column of semesters (admin insert)
 
 -- authenticated EXECUTE: only functions meant for signed-in users (by full signature).
 -- RLS helpers (used inside policies, so authenticated must be able to run them)
