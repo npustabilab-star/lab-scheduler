@@ -24,7 +24,7 @@ export default function Layout() {
     <div className="flex min-h-screen flex-col pb-14 md:pb-0">
       <header className="flex items-center justify-between border-b px-3 py-2">
         <div className="flex items-center gap-4">
-          <span className="font-bold">研究室排班</span>
+          <NavLink to="/" className="font-bold">研究室排班</NavLink>
           <nav className="hidden md:flex">
             {routes.map((r) => (
               <NavLink key={r} to={`/${r}`} className={linkClass}>

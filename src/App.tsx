@@ -12,6 +12,7 @@ import LoginPage from './pages/LoginPage'
 import MasterPage from './pages/MasterPage'
 import MyGridPage from './pages/MyGridPage'
 import PendingPage from './pages/PendingPage'
+import PublicBoardPage from './pages/PublicBoardPage'
 import RequestsPage from './pages/RequestsPage'
 
 function Guard({ need, children }: { need: 'anon' | 'pending' | 'change' | 'active'; children: ReactNode }) {
@@ -54,6 +55,7 @@ const PAGES: [RouteKey, string][] = [
 export function AppRoutes() {
   return (
         <Routes>
+          <Route path="/" element={<PublicBoardPage />} />
           <Route path="/login" element={<Guard need="anon"><LoginPage /></Guard>} />
           <Route path="/change-password" element={<Guard need="change"><ChangePasswordPage /></Guard>} />
           <Route path="/pending" element={<Guard need="pending"><PendingPage /></Guard>} />

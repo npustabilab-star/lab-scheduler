@@ -270,6 +270,9 @@ isOneToOne: false
 "is_active_member":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"is_active_teacher":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
 "is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
@@ -284,6 +287,16 @@ isOneToOne: false
                            },
 "password_changed":
 { Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"public_board":
+{ Args: { "p_from": string,"p_to": string }; Returns: {
+              "date": string,"display_name": string,"period": number
+            }[]
+                           },
+"public_periods":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "end_time": string,"label": string,"period": number,"start_time": string
+            }[]
                            },
 "remove_exception":
 { Args: { "p_date": string,"p_period": number }; Returns: undefined

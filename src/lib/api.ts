@@ -109,3 +109,10 @@ export const resetMemberPassword = (userId: string) => adminMembers({ action: 'r
 
 export const setNotifyEmail = (userId: string, email: string) =>
   call(supabase.rpc('set_notify_email', { p_user: userId, p_email: email })).then(() => undefined)
+
+/** Public (no login): grads in the lab per date/period, names only. At most 14 days per call. */
+export const publicBoard = (from: string, to: string): Promise<Fns['public_board']['Returns']> =>
+  call(supabase.rpc('public_board', { p_from: from, p_to: to }))
+
+/** Public (no login): periods in start-time order. */
+export const publicPeriods = (): Promise<Fns['public_periods']['Returns']> => call(supabase.rpc('public_periods'))

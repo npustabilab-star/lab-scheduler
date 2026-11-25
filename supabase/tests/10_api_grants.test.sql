@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(46);
+select plan(48);
 
 -- authenticated tables
 select ok(has_table_privilege('authenticated', 'public.profiles', 'SELECT'), 'authenticated can SELECT profiles');
@@ -30,6 +30,9 @@ select ok(not has_function_privilege('authenticated', 'public.expire_pending_boo
 select ok(not has_function_privilege('authenticated', 'public.is_teacher_or_grad()', 'EXECUTE'), 'authenticated cannot EXECUTE is_teacher_or_grad');
 select ok(not has_function_privilege('authenticated', 'public.handle_new_user()', 'EXECUTE'), 'authenticated cannot EXECUTE handle_new_user');
 
+select ok(has_function_privilege('anon', 'public.public_board(date, date)', 'EXECUTE'), 'anon can EXECUTE public_board');
+select ok(has_function_privilege('anon', 'public.public_periods()', 'EXECUTE'), 'anon can EXECUTE public_periods');
+
 -- service_role
 select ok(has_table_privilege('service_role', 'public.profiles', 'UPDATE'), 'service_role can UPDATE profiles');
 select ok(has_table_privilege('service_role', 'public.notifications', 'SELECT'), 'service_role can SELECT notifications');
@@ -57,12 +60,12 @@ select is((select coalesce(array_agg(c.relname::text order by c.relname), '{}') 
          or has_table_privilege('anon', c.oid, 'DELETE,TRUNCATE,TRIGGER'))),
   '{}'::text[], 'anon has no privileges on any public table');
 
-select is((select coalesce(array_agg(p.oid::regprocedure::text order by p.oid::regprocedure::text), '{}') from pg_proc p
+select is((select coalesce(array_agg(replace(p.oid::regprocedure::text, ', ', ',') order by replace(p.oid::regprocedure::text, ', ', ',')), '{}') from pg_proc p
   where p.pronamespace = 'public'::regnamespace
     and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')
     and (has_function_privilege('anon', p.oid, 'EXECUTE')
          or exists (select 1 from aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a where a.grantee = 0 and a.privilege_type = 'EXECUTE'))),
-  '{}'::text[], 'no public function is executable by anon or PUBLIC');
+  array['public_board(date,date)','public_periods()'], 'only the public board functions are executable by anon or PUBLIC');
 
 select is((select coalesce(array_agg(replace(p.oid::regprocedure::text, ', ', ',') order by replace(p.oid::regprocedure::text, ', ', ',')), '{}') from pg_proc p
   where p.pronamespace = 'public'::regnamespace
@@ -76,7 +79,8 @@ select is((select coalesce(array_agg(replace(p.oid::regprocedure::text, ', ', ',
     'add_no_class_day(date,text,boolean)','remove_no_class_day(date)','set_mentor(uuid,uuid,boolean)',
     'set_account_status(uuid,account_status,boolean)','set_admin(uuid,boolean)','mark_notifications_read(bigint[])',
     'password_changed()','set_notify_email(uuid,text)',
-    'set_day_slot(date,smallint,boolean,boolean)','clear_day_slot(date,smallint,boolean)']) x),
+    'set_day_slot(date,smallint,boolean,boolean)','clear_day_slot(date,smallint,boolean)',
+    'public_board(date,date)','public_periods()']) x),
   'authenticated EXECUTE set equals the allowlist');
 
 select ok(not has_sequence_privilege('authenticated', 'public.notifications_id_seq', 'USAGE'), 'authenticated has no USAGE on notifications_id_seq');
