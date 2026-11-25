@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(18);
 
 insert into semesters (name, start_date, end_date, is_current) values ('S', '2026-02-16', '2026-06-30', true);
 
@@ -9,6 +9,10 @@ select tests.create_user('mc@x.com', 'grad') as mc \gset
 select tests.create_user('n1@x.com', 'undergrad', 'pending') as n1 \gset
 select tests.create_user('n2@x.com', 'undergrad', 'pending') as n2 \gset
 select tests.create_user('g1@x.com', 'grad') as g1 \gset
+select tests.create_user('mc2@x.com', 'grad') as mc2 \gset
+select tests.create_user('adm2@x.com', 'teacher', 'active', true) as adm2 \gset
+select tests.create_user('n3@x.com', 'undergrad', 'pending') as n3 \gset
+update profiles set must_change_password = true where id in (:'mc2', :'adm2');
 update profiles set must_change_password = true where id = :'mc';
 
 -- must_change user sees nothing
@@ -33,7 +37,7 @@ select tests.logout();
 select admin_setup_member(:'n1', 'S100', '同學一', 'grad', null, null, false);
 select results_eq(
   format($$select status::text, student_id, must_change_password from profiles where id = %L$$, :'n1'),
-  $$values ('active', 'S100', true)$$,
+  $$values ('active', 's100', true)$$,
   'setup activates the profile and forces a password change');
 
 select throws_ok(
@@ -41,7 +45,7 @@ select throws_ok(
   'STUDENT_ID_EXISTS', 'duplicate student id is rejected');
 
 select throws_ok(
-  format($$select admin_setup_member(%L, 'T1', '老師', 'teacher', null, null, true)$$, :'n2'),
+  format($$select admin_setup_member(%L, 'T100', '老師', 'teacher', null, null, true)$$, :'n2'),
   'EMAIL_REQUIRED', 'teacher requires an email');
 
 -- set_notify_email
@@ -59,6 +63,28 @@ select throws_ok(
   'EMAIL_REQUIRED', 'teacher cannot clear the notify email');
 select tests.logout();
 
+
+-- fix round 1
+select tests.login_as(:'mc2');
+select throws_ok($$select set_weekly_slot(1::smallint, 1::smallint, true)$$, 'NOT_ALLOWED', 'must_change grad cannot use teacher/grad RPCs');
+select tests.logout();
+select tests.login_as(:'adm2');
+select is(is_admin(), false, 'must_change admin is not an admin');
+select tests.logout();
+
+select tests.login_as(:'n3');
+select password_changed();
+select tests.logout();
+select is((select status::text from profiles where id = :'n3'), 'pending', 'password_changed leaves a pending user pending');
+
+select admin_setup_member(:'n3', ' S100X ', '同學三', 'grad', null, null, false);
+select is((select student_id from profiles where id = :'n3'), 's100x', 'student id is trimmed and lower-cased');
+select throws_ok(
+  format($$select admin_setup_member(%L, 'S100X', 'dup', 'grad', null, null, false)$$, :'n2'),
+  'STUDENT_ID_EXISTS', 'student id uniqueness is case-insensitive');
+select throws_ok(
+  format($$select admin_setup_member(%L, '', 'x', 'grad', null, null, false)$$, :'n2'),
+  'INVALID_STUDENT_ID', 'empty student id rejected');
 -- self signup stays pending
 insert into auth.users (id, email) values ('bbbbbbbb-0000-0000-0000-000000000001', 'self@x.com');
 select results_eq(

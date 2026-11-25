@@ -1,7 +1,7 @@
 -- Student-ID login: student_id, notify_email, forced password change.
 
 alter table profiles
-  add column student_id text unique,
+  add column student_id text unique check (student_id = lower(student_id)),
   add column notify_email text,
   add column must_change_password boolean not null default false;
 
@@ -33,6 +33,8 @@ create function admin_setup_member(
 language plpgsql security definer set search_path = public
 as $$
 begin
+  p_student_id := lower(btrim(coalesce(p_student_id, '')));
+  if length(p_student_id) < 4 then raise exception 'INVALID_STUDENT_ID'; end if;
   p_notify_email := nullif(btrim(coalesce(p_notify_email, '')), '');
   if not exists (select 1 from profiles where id = p_user) then raise exception 'USER_NOT_FOUND'; end if;
   if exists (select 1 from profiles where student_id = p_student_id and id <> p_user) then
@@ -88,3 +90,10 @@ revoke execute on function admin_reset_flag(uuid) from public, anon, authenticat
 grant execute on function admin_setup_member(uuid, text, text, user_role, uuid, text, boolean) to service_role;
 grant execute on function admin_reset_flag(uuid) to service_role;
 revoke execute on function set_notify_email(uuid, text) from public, anon;
+
+-- a must_change caller has no teacher/grad access either
+create or replace function is_teacher_or_grad() returns boolean
+language sql stable security definer set search_path = public
+as $$ select exists (select 1 from profiles
+       where id = auth.uid() and status = 'active' and not must_change_password
+         and role in ('teacher','grad')) $$;
