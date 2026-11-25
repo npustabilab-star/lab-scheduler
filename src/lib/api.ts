@@ -116,3 +116,6 @@ export const publicBoard = (from: string, to: string): Promise<Fns['public_board
 
 /** Public (no login): periods in start-time order. */
 export const publicPeriods = (): Promise<Fns['public_periods']['Returns']> => call(supabase.rpc('public_periods'))
+
+export const setDisplayName = (userId: string, name: string) =>
+  call(supabase.rpc('set_display_name', { p_user: userId, p_name: name }))

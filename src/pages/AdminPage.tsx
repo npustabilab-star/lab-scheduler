@@ -173,6 +173,9 @@ export default function AdminPage() {
                       重設密碼
                     </button>
                   </div>
+                  {(isTeacher || p.role !== 'teacher') && (
+                    <RenameMember key={`name-${p.display_name}`} profile={p} onSave={(name) => void act(() => api.setDisplayName(p.id, name))} />
+                  )}
                   <NotifyEmail key={p.notify_email ?? ''} profile={p} onSave={(email) => void act(() => api.setNotifyEmail(p.id, email))} />
                 </li>
               ))}
@@ -284,6 +287,21 @@ function AddMemberForm({ grads, onCreate, onError }: {
       </form>
       <p className="mt-1 text-xs text-gray-500">初始密碼為學號後四碼，第一次登入需更改密碼。</p>
     </section>
+  )
+}
+
+function RenameMember({ profile, onSave }: { profile: Profile; onSave: (name: string) => void }) {
+  const [name, setName] = useState(profile.display_name)
+  return (
+    <form className="mt-1 flex flex-wrap items-center gap-2"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (name.trim() && name.trim() !== profile.display_name) onSave(name.trim())
+      }}>
+      <input aria-label={`${profile.display_name}的姓名`} className={input} value={name} maxLength={30}
+        placeholder="姓名" onChange={(e) => setName(e.target.value)} />
+      <button type="submit" className={btn}>更改名稱</button>
+    </form>
   )
 }
 

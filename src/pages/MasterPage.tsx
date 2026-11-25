@@ -14,6 +14,7 @@ export default function MasterPage() {
   const [hasSemester, setHasSemester] = useState(true)
   const [slots, setSlots] = useState<Slot[]>([])
   const [names, setNames] = useState<Map<string, string>>(new Map())
+  const [teacherIds, setTeacherIds] = useState<Set<string>>(new Set())
   const [periods, setPeriods] = useState<PeriodInfo[]>([])
   const [labels, setLabels] = useState<Record<number, string>>({})
   const [error, setError] = useState<string | null>(null)
@@ -32,14 +33,15 @@ export default function MasterPage() {
       }
       const [slotRes, gradRes] = await Promise.all([
         supabase.from('weekly_slots').select().eq('semester_id', semesterId),
-        supabase.from('profiles').select().eq('role', 'grad').eq('status', 'active'),
+        supabase.from('profiles').select().in('role', ['grad', 'teacher']).eq('status', 'active'),
       ])
       if (!isCurrent()) return
       setHasSemester(true)
       if (slotRes.error) throw new Error(slotRes.error.message)
       if (gradRes.error) throw new Error(gradRes.error.message)
       setSlots(slotRes.data ?? [])
-      setNames(new Map((gradRes.data ?? []).map((g) => [g.id, g.display_name])))
+      setNames(new Map((gradRes.data ?? []).map((g) => [g.id, g.role === 'teacher' ? `${g.display_name}老師` : g.display_name])))
+      setTeacherIds(new Set((gradRes.data ?? []).filter((g) => g.role === 'teacher').map((g) => g.id)))
       setPeriods(periods)
       setLabels(labels)
       setError(null)
@@ -56,7 +58,10 @@ export default function MasterPage() {
   useTableChanges(['weekly_slots', 'profiles'], () => void load())
 
   const grid = useMemo(() => buildMasterGrid(slots, names), [slots, names])
-  const uncovered = useMemo(() => uncoveredWeekdays(slots, new Set(names.keys())), [slots, names])
+  const uncovered = useMemo(
+    () => uncoveredWeekdays(slots, new Set([...names.keys()].filter((id) => !teacherIds.has(id)))),
+    [slots, names, teacherIds],
+  )
 
   if (!loaded) return <p className="p-4">載入中…</p>
   const selectedNames = selected ? (grid.get(slotKey(selected.w, selected.p)) ?? []) : []

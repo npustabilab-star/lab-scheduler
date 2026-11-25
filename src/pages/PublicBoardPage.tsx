@@ -15,7 +15,7 @@ const key = (date: string, period: number) => `${date}|${period}`
 export default function PublicBoardPage() {
   const { session, profile } = useAuth()
   const [monday, setMonday] = useState(() => thisWeekMonday(taipeiToday()))
-  const [names, setNames] = useState<Map<string, string[]>>(new Map())
+  const [names, setNames] = useState<Map<string, { grads: string[]; teacher: string[] }>>(new Map())
   const [periods, setPeriods] = useState<PeriodInfo[]>([])
   const [error, setError] = useState<string | null>(null)
   const beginLoad = useRef(createLatestOnly()).current
@@ -26,10 +26,12 @@ export default function PublicBoardPage() {
     try {
       const [rows, per] = await Promise.all([publicBoard(days[0], days[4]), publicPeriods()])
       if (!isCurrent()) return
-      const m = new Map<string, string[]>()
+      const m = new Map<string, { grads: string[]; teacher: string[] }>()
       for (const r of rows ?? []) {
         const k = key(r.date, r.period)
-        m.set(k, [...(m.get(k) ?? []), r.display_name])
+        const c = m.get(k) ?? { grads: [], teacher: [] }
+        ;(r.is_teacher ? c.teacher : c.grads).push(r.display_name)
+        m.set(k, c)
       }
       setNames(m)
       setPeriods(
@@ -61,7 +63,9 @@ export default function PublicBoardPage() {
       </header>
       <main className="p-2">
         <h1 className="mb-2 text-xl font-bold">總表</h1>
-        <p className="mb-2 text-sm text-gray-600">每一節在研究室的研究生</p>
+        <p className="mb-2 text-sm text-gray-600">
+          每一節在研究室的研究生，<span className="rounded bg-amber-100 px-1 text-amber-800">黃色</span>為老師在校時間
+        </p>
         {error && (
           <p role="alert" className="mb-2 rounded bg-red-100 p-2 text-sm text-red-700">
             {error}
@@ -79,8 +83,18 @@ export default function PublicBoardPage() {
               days={days}
               periods={periods.length ? periods : undefined}
               cells={(w, p) => {
-                const list = names.get(key(days[w - 1], p))
-                return list?.length ? <div className="py-0.5 text-xs leading-tight">{list.join('、')}</div> : null
+                const c = names.get(key(days[w - 1], p))
+                if (!c) return null
+                return (
+                  <div className="space-y-0.5 py-0.5 text-xs leading-tight">
+                    {c.teacher.map((t) => (
+                      <div key={t} className="rounded bg-amber-100 px-1 text-amber-800">
+                        {t}老師
+                      </div>
+                    ))}
+                    {c.grads.length > 0 && <div>{c.grads.join('、')}</div>}
+                  </div>
+                )
               }}
             />
           </div>

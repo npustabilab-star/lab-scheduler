@@ -290,7 +290,7 @@ isOneToOne: false
                            },
 "public_board":
 { Args: { "p_from": string,"p_to": string }; Returns: {
-              "date": string,"display_name": string,"period": number
+              "date": string,"display_name": string,"is_teacher": boolean,"period": number
             }[]
                            },
 "public_periods":
@@ -320,6 +320,9 @@ isOneToOne: false
                            },
 "set_day_slot":
 { Args: { "p_confirm"?: boolean,"p_date": string,"p_on": boolean,"p_period": number }; Returns: Json
+                           },
+"set_display_name":
+{ Args: { "p_name": string,"p_user": string }; Returns: undefined
                            },
 "set_mentor":
 { Args: { "p_confirm"?: boolean,"p_grad": string,"p_undergrad": string }; Returns: Json

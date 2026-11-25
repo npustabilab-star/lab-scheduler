@@ -18,6 +18,7 @@ describe('PublicBoardPage', () => {
     h.publicBoard.mockResolvedValue([
       { date: '2026-11-23', period: 3, display_name: '小明' },
       { date: '2026-11-23', period: 3, display_name: '小華' },
+      { date: '2026-11-24', period: 8, display_name: '徐明龍', is_teacher: true },
     ])
     h.publicPeriods.mockResolvedValue([
       { period: 3, label: '第3節', start_time: '10:15:00', end_time: '11:05:00' },
@@ -29,6 +30,7 @@ describe('PublicBoardPage', () => {
       </MemoryRouter>,
     )
     expect(await screen.findByText('小明、小華')).toBeInTheDocument()
+    expect(screen.getByText('徐明龍老師')).toBeInTheDocument()
     expect(h.publicBoard).toHaveBeenCalledWith('2026-11-23', '2026-11-27')
     expect(screen.getAllByText('午休').length).toBeGreaterThan(0)
     expect(screen.getByText((_, el) => el?.textContent === '13:00–13:20')).toBeInTheDocument()
