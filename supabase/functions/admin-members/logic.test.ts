@@ -71,3 +71,17 @@ describe('scripts/credentials.mjs matches shared credentials.ts', () => {
     expect(m.toAuthPassword(initialPassword(input))).toBe(toAuthPassword(initialPassword(input)))
   })
 })
+
+describe('isValidEmail (scripts) agrees with logic.ts', () => {
+  it.each([
+    ['npustabilab@gmail.com', true],
+    ['students@x.edu', true],
+    ['abc', false],
+    ['a@bXc', false],
+  ])('%s -> %s', async (email, expected) => {
+    const m = await import('../../../scripts/credentials.mjs')
+    expect(m.isValidEmail(email)).toBe(expected)
+    const r = validateCreateInput({ student_id: 'b1234', display_name: 'a', role: 'grad', notify_email: email })
+    expect(r.ok).toBe(expected)
+  })
+})

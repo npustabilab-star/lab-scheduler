@@ -1,7 +1,7 @@
 // Usage: node scripts/create-first-admin.mjs <代碼> <姓名> <Email> <密碼>
 // Env:   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 import { createClient } from '@supabase/supabase-js'
-import { loginEmail, normalizeStudentId, toAuthPassword } from './credentials.mjs'
+import { isValidEmail, loginEmail, normalizeStudentId, toAuthPassword } from './credentials.mjs'
 
 const [studentId, name, email, password] = process.argv.slice(2)
 if (!studentId || !name || !email || !password) {
@@ -12,7 +12,7 @@ if (password.length < 8) {
   console.error('密碼至少 8 碼')
   process.exit(1)
 }
-if (!/^[^s@]+@[^s@]+.[^s@]+$/.test(email.trim())) {
+if (!isValidEmail(email)) {
   console.error('Email 格式不正確')
   process.exit(1)
 }

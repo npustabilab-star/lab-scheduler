@@ -10,6 +10,11 @@ export function loginEmail(studentId) {
   return `${normalizeStudentId(studentId)}@${LOGIN_DOMAIN}`
 }
 
+// Must match EMAIL_RE in supabase/functions/admin-members/logic.ts.
+export function isValidEmail(s) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim())
+}
+
 export function toAuthPassword(input) {
   return `lab-scheduler:${input}`
 }
