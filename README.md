@@ -17,8 +17,8 @@
    node scripts/create-first-admin.mjs teacher 老師姓名 teacher@example.com 12345678
    ```
 6. 啟動：`npm run dev`，用學號 `teacher` 與剛才設定的密碼登入；其他成員由「管理」頁新增（初始密碼為學號後四碼，第一次登入需改密碼）。
-6. 前端測試：`npm test -- --run`
-7. 資料庫測試：`npx supabase test db`（需要乾淨的資料庫；若本機建立過使用者，請先 `npx supabase db reset`）
+7. 前端測試：`npm test -- --run`
+8. 資料庫測試：`npx supabase test db`（需要乾淨的資料庫；若本機建立過使用者，請先 `npx supabase db reset`）
 
 ## 部署與交接
 

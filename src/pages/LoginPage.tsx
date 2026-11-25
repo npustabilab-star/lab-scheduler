@@ -39,6 +39,7 @@ export default function LoginPage() {
           <input type="password" className="rounded border px-3 py-2" value={password} required
             autoComplete="current-password" onChange={(e) => setPassword(e.target.value)} />
         </label>
+        <p className="text-xs text-gray-600">第一次登入的密碼為學號後四碼（英文字母請用小寫）</p>
         {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
         <button type="submit" disabled={busy} className="rounded bg-blue-600 px-5 py-3 text-white disabled:opacity-50">
           登入
