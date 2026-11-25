@@ -1,6 +1,6 @@
 # 交接文件
 
-本文件說明如何從零部署這個系統，以及日常維護。請依序操作，所有指令都在 PowerShell 執行，並且**一律在 `lab-scheduler` 專案資料夾內**執行（在上層資料夾執行 Supabase CLI 會靜默地什麼都沒推送）。
+本文件說明如何從零部署這個系統，以及日常維護。請依序操作，所有指令都在 PowerShell 執行，並且**一律在 `lab-scheduler` 專案資料夾內**執行（在上層資料夾執行 Supabase CLI 會靜默地什麼都沒推送）。第一次使用前，先在專案資料夾執行 `npm install`（第 6 節的腳本與第 7 節的 `npm run build` 都需要它）。
 
 目前的正式環境：
 
@@ -34,7 +34,7 @@
 1. 在 Supabase Dashboard 建立新專案（目前專案已建立，ref 為 `muehypeofgmbqhsvuccd`），記下 Project ref 與資料庫密碼。
 2. 在專案資料夾執行（第一次需要先登入 CLI，會開啟瀏覽器授權）：
    ```powershell
-   cd C:\Users\user\Desktop\ABI-Agent\lab-scheduler
+   cd <專案資料夾>\lab-scheduler   # 目前位於 C:\Users\user\Desktop\ABI-Agent\lab-scheduler
    npx supabase login
    npx supabase link --project-ref muehypeofgmbqhsvuccd
    npx supabase db push --remote
@@ -104,6 +104,7 @@ node scripts/create-first-admin.mjs teacher 老師姓名 老師Email 初始密�
    npx wrangler login
    npx wrangler deploy
    ```
+   第一次執行 `npx wrangler` 會先下載 wrangler，可能詢問是否繼續安裝，回答 `y`。
 3. 部署完成後網址為 <https://lab-scheduler.npustabilab.workers.dev>。之後每次更新前端，只要重做步驟 1 與 `npx wrangler deploy`。
 4. 注意：在同一個 PowerShell 視窗設過 `$env:VITE_SUPABASE_URL` 之後，再 `npm run dev` 會連到雲端資料庫。本機開發前請關掉該視窗，或執行 `Remove-Item Env:VITE_SUPABASE_URL, Env:VITE_SUPABASE_ANON_KEY`。
 
