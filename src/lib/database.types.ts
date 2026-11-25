@@ -103,14 +103,14 @@ isOneToOne: false
                   ]
                 },"periods": {
                   Row: {
-                    "end_time": string,"period": number,"start_time": string
+                    "end_time": string,"label": string,"period": number,"start_time": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "end_time": string,"period": number,"start_time": string
+                    "end_time": string,"label": string,"period": number,"start_time": string
                   }
                   Update: {
-                    "end_time"?: string,"period"?: number,"start_time"?: string
+                    "end_time"?: string,"label"?: string,"period"?: number,"start_time"?: string
                   }
                   Relationships: [
                     
