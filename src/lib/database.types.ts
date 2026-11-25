@@ -315,7 +315,7 @@ isOneToOne: false
 { Args: { "p_email": string,"p_user": string }; Returns: undefined
                            },
 "set_weekly_slot":
-{ Args: { "p_confirm"?: boolean,"p_on": boolean,"p_period": number,"p_weekday": number }; Returns: Json
+{ Args: { "p_confirm"?: boolean,"p_date"?: string,"p_on": boolean,"p_period": number,"p_weekday": number }; Returns: Json
                            },
 "taipei_now":
 { Args: Record<PropertyKey, never>; Returns: string

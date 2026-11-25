@@ -24,8 +24,11 @@ async function call<T>(p: PromiseLike<{ data: T | null; error: { message: string
 const change = async (p: PromiseLike<{ data: unknown; error: { message: string } | null }>) =>
   (await call(p)) as ChangeResult
 
-export const setWeeklySlot = (weekday: number, period: number, on: boolean, confirm: boolean) =>
-  change(supabase.rpc('set_weekly_slot', { p_weekday: weekday, p_period: period, p_on: on, p_confirm: confirm }))
+/** `date` = the date being viewed; that week's per-period exception is dropped so it follows the template. */
+export const setWeeklySlot = (weekday: number, period: number, on: boolean, confirm: boolean, date?: string) =>
+  change(
+    supabase.rpc('set_weekly_slot', { p_weekday: weekday, p_period: period, p_on: on, p_confirm: confirm, p_date: date }),
+  )
 
 export const setDaySlot = (date: string, period: number, on: boolean, confirm: boolean) =>
   change(supabase.rpc('set_day_slot', { p_date: date, p_period: period, p_on: on, p_confirm: confirm }))
