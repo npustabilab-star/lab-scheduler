@@ -11,7 +11,8 @@ begin
   insert into auth.users (id, email, raw_user_meta_data)
   values (v_id, p_email, jsonb_build_object('full_name', split_part(p_email, '@', 1)));
   update public.profiles
-     set role = p_role, status = p_status, is_admin = p_admin, mentor_id = p_mentor
+     set role = p_role, status = p_status, is_admin = p_admin, mentor_id = p_mentor,
+         student_id = split_part(p_email, '@', 1), must_change_password = false
    where id = v_id;
   return v_id;
 end $$;
