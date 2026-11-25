@@ -9,7 +9,7 @@ const json = (body: unknown, status = 200) =>
 
 const hhmm = (t: string) => t.slice(0, 5)
 
-Deno.serve(async (req) => {
+async function handle(req: Request): Promise<Response> {
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '')
   if (!serviceKey || !token) return json({ error: 'unauthorized' }, 401)
@@ -55,8 +55,9 @@ Deno.serve(async (req) => {
     try {
       await smtp.send({ from: user, to, subject, content: text })
     } catch (e) {
-      console.error('send failed:', e instanceof Error ? e.message : 'unknown error')
-      return json({ error: 'send failed' }, 502)
+      const reason = (e instanceof Error ? `${e.name}: ${e.message}` : String(e)).slice(0, 300)
+      console.error('send failed:', reason)
+      return json({ error: 'send failed', reason }, 502)
     } finally {
       await smtp.close().catch(() => {})
     }
@@ -120,4 +121,22 @@ Deno.serve(async (req) => {
     .from('notifications').update({ emailed_at: new Date().toISOString() }).eq('id', id)
   if (uErr) return json({ error: 'sent but failed to mark emailed_at' }, 500)
   return json({ sent: true })
+}
+
+// The SMTP library can reject promises nobody awaits; log them instead of killing the worker.
+globalThis.addEventListener('unhandledrejection', (ev) => {
+  console.error('notify-email unhandled rejection:', String(ev.reason).slice(0, 300))
+  ev.preventDefault()
+})
+
+// Any uncaught error (e.g. inside the SMTP library) becomes a JSON 500 with a short reason,
+// visible in net._http_response.content, instead of a bare "Internal Server Error".
+Deno.serve(async (req) => {
+  try {
+    return await handle(req)
+  } catch (e) {
+    const reason = (e instanceof Error ? `${e.name}: ${e.message}` : String(e)).slice(0, 300)
+    console.error("notify-email crashed:", reason)
+    return json({ error: "crashed", reason }, 500)
+  }
 })
