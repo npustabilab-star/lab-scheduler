@@ -2,10 +2,16 @@ import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { toAuthPassword } from '../lib/credentials'
+import { rpcErrorMessage } from '../lib/errors'
 import { validateNewPassword } from '../lib/password'
 import { supabase } from '../lib/supabase'
 
 const FAILED = '密碼更新失敗，請再試一次'
+const PARTIAL = '密碼已更新，但尚未完成設定，請再按一次送出'
+
+// Supabase rejects an update to the identical password; that means it is already applied.
+const isSamePassword = (e: { code?: string; message?: string }) =>
+  e.code === 'same_password' || /same/i.test(e.message ?? '')
 
 export default function ChangePasswordPage() {
   const { refresh } = useAuth()
@@ -13,8 +19,8 @@ export default function ChangePasswordPage() {
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  // Set once updateUser succeeded: a retry must only re-call the RPC (Supabase rejects an identical new password).
-  const passwordUpdated = useRef(false)
+  // The password updateUser last applied (null = none yet): only call updateUser again when the input differs.
+  const appliedPassword = useRef<string | null>(null)
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -24,13 +30,16 @@ export default function ChangePasswordPage() {
     setBusy(true)
     setError(null)
     try {
-      if (!passwordUpdated.current) {
+      if (appliedPassword.current !== pw) {
         const { error: updateErr } = await supabase.auth.updateUser({ password: toAuthPassword(pw) })
-        if (updateErr) return setError(FAILED)
-        passwordUpdated.current = true
+        if (updateErr && !isSamePassword(updateErr)) return setError(FAILED)
+        appliedPassword.current = pw
       }
       const { error: flagErr } = await supabase.rpc('password_changed')
-      if (flagErr) return setError(FAILED)
+      if (flagErr) {
+        if (flagErr.message?.includes('PASSWORD_NOT_CHANGED')) return setError(rpcErrorMessage('PASSWORD_NOT_CHANGED'))
+        return setError(PARTIAL)
+      }
       await refresh()
     } catch {
       setError(FAILED)
