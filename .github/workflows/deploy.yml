@@ -50,8 +50,8 @@ jobs:
 
       - name: 部署後台函式
         run: |
-          npx supabase functions deploy notify-email --project-ref "$PROJECT_REF"
-          npx supabase functions deploy admin-members --project-ref "$PROJECT_REF"
+          npx supabase functions deploy notify-email --remote="$PROJECT_REF" --yes
+          npx supabase functions deploy admin-members --remote="$PROJECT_REF" --yes
 
       - name: 打包網站
         env:
