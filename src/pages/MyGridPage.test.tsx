@@ -105,6 +105,30 @@ describe('MyGridPage', () => {
     await waitFor(() => expect(h.clearDaySlot).toHaveBeenCalledWith('2026-11-26', 5, false))
   })
 
+  it('passes the viewed date to the weekly changes', async () => {
+    h.setWeeklySlot.mockResolvedValue({ applied: true, affected: [] })
+    const user = userEvent.setup({ advanceTimers: () => undefined })
+    const { container } = render(<MyGridPage />)
+    await waitFor(() => expect(cellOf(container, '4-3')).toBeTruthy())
+    await user.click(cellOf(container, '4-3'))
+    await user.click(screen.getByRole('button', { name: '每週這節都可以' }))
+    await waitFor(() => expect(h.setWeeklySlot).toHaveBeenCalledWith(4, 3, true, false, '2026-11-26'))
+    await user.click(cellOf(container, '3-3'))
+    await user.click(screen.getByRole('button', { name: '每週這節都不行' }))
+    await waitFor(() => expect(h.setWeeklySlot).toHaveBeenCalledWith(3, 3, false, false, '2026-11-25'))
+  })
+
+  it('shows no check or adjustment on a no-class day', async () => {
+    h.tables.no_class_days = [{ date: '2026-11-25', note: '校慶' }]
+    h.tables.slot_exceptions = [{ user_id: 'me', date: '2026-11-25', period: 5, kind: 'extra' }]
+    const { container } = render(<MyGridPage />)
+    await screen.findByText('校慶')
+    expect(cellOf(container, '3-3')).not.toHaveAttribute('data-on', 'true')
+    expect(cellOf(container, '3-3')).not.toHaveTextContent('✓')
+    expect(cellOf(container, '3-5')).not.toHaveAttribute('data-on', 'true')
+    expect(cellOf(container, '3-5')).not.toHaveTextContent('本週調整')
+  })
+
   it('does not open a popup for a past date', async () => {
     const user = userEvent.setup({ advanceTimers: () => undefined })
     const { container } = render(<MyGridPage />)

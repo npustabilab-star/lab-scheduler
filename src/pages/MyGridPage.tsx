@@ -12,7 +12,7 @@ import { createLatestOnly } from '../lib/latestOnly'
 import { loadSemesterAndPeriods } from '../lib/semester'
 import { supabase } from '../lib/supabase'
 import type { AffectedBooking, ChangeResult } from '../lib/supabase'
-import { shiftWeek, taipeiToday, weekOf } from '../lib/week'
+import { shiftWeek, taipeiToday, thisWeekMonday, weekOf } from '../lib/week'
 
 type Pending = { affected: AffectedBooking[]; resolve: (ok: boolean) => void }
 type Exc = { date: string; period: number | null; kind: string }
@@ -24,7 +24,7 @@ const btn = 'block w-full rounded border px-3 py-2'
 
 export default function MyGridPage() {
   const { profile } = useAuth()
-  const [monday, setMonday] = useState(() => weekOf(taipeiToday()).monday)
+  const [monday, setMonday] = useState(() => thisWeekMonday(taipeiToday()))
   const [loaded, setLoaded] = useState(false)
   const [semester, setSemester] = useState<Semester | null>(null)
   const [template, setTemplate] = useState<Set<string>>(new Set())
@@ -95,9 +95,9 @@ export default function MyGridPage() {
     let effective = inSemester && inTemplate
     if (ex?.kind === 'off') effective = false
     if (ex?.kind === 'extra' && inSemester) effective = true
-    if (wholeDayOff) effective = false
+    if (wholeDayOff || noClass.has(date)) effective = false
     const editable = inSemester && date >= today && !noClass.has(date)
-    return { date, effective, adjusted: inSemester && effective !== inTemplate, wholeDayOff, editable }
+    return { date, effective, adjusted: inSemester && !noClass.has(date) && effective !== inTemplate, wholeDayOff, editable }
   }
 
   const act = async (fn: () => Promise<ChangeResult | null>) => {
@@ -137,7 +137,7 @@ export default function MyGridPage() {
       <WeekNav
         monday={monday}
         onPrev={() => setMonday((m) => shiftWeek(m, -1))}
-        onToday={() => setMonday(weekOf(taipeiToday()).monday)}
+        onToday={() => setMonday(thisWeekMonday(taipeiToday()))}
         onNext={() => setMonday((m) => shiftWeek(m, 1))}
       />
       {!semester ? (
@@ -198,7 +198,7 @@ export default function MyGridPage() {
                   <button
                     type="button"
                     className={btn}
-                    onClick={() => void act(() => runWithImpact((c) => setWeeklySlot(picked.w, picked.p, false, c), ask))}
+                    onClick={() => void act(() => runWithImpact((c) => setWeeklySlot(picked.w, picked.p, false, c, picked.date), ask))}
                   >
                     每週這節都不行
                   </button>
@@ -217,7 +217,7 @@ export default function MyGridPage() {
                   <button
                     type="button"
                     className={btn}
-                    onClick={() => void act(() => runWithImpact((c) => setWeeklySlot(picked.w, picked.p, true, c), ask))}
+                    onClick={() => void act(() => runWithImpact((c) => setWeeklySlot(picked.w, picked.p, true, c, picked.date), ask))}
                   >
                     每週這節都可以
                   </button>
