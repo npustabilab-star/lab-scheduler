@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(43);
+select plan(46);
 
 -- authenticated tables
 select ok(has_table_privilege('authenticated', 'public.profiles', 'SELECT'), 'authenticated can SELECT profiles');
@@ -46,6 +46,9 @@ select ok(not has_function_privilege('anon', 'public.password_changed()', 'EXECU
 select ok(not has_function_privilege('authenticated', 'public.queue_notification_email()', 'EXECUTE'), 'authenticated cannot EXECUTE queue_notification_email');
 select ok(not has_function_privilege('authenticated', 'public.notify_booking_change()', 'EXECUTE'), 'authenticated cannot EXECUTE notify_booking_change');
 select ok(not has_function_privilege('authenticated', 'public.change_affected_json(uuid[])', 'EXECUTE'), 'authenticated cannot EXECUTE change_affected_json');
+select ok(has_function_privilege('authenticated', 'public.set_day_slot(date, smallint, boolean, boolean)', 'EXECUTE'), 'authenticated can EXECUTE set_day_slot');
+select ok(has_function_privilege('authenticated', 'public.clear_day_slot(date, smallint, boolean)', 'EXECUTE'), 'authenticated can EXECUTE clear_day_slot');
+select ok(not has_function_privilege('authenticated', 'public.day_slot_check(date, smallint)', 'EXECUTE'), 'authenticated cannot EXECUTE day_slot_check');
 
 -- sweeps: new objects without a grant decision fail here
 select is((select coalesce(array_agg(c.relname::text order by c.relname), '{}') from pg_class c
@@ -72,7 +75,8 @@ select is((select coalesce(array_agg(replace(p.oid::regprocedure::text, ', ', ',
     'set_weekly_slot(smallint,smallint,boolean,boolean)','add_exception(date,smallint,boolean)','remove_exception(date,smallint)',
     'add_no_class_day(date,text,boolean)','remove_no_class_day(date)','set_mentor(uuid,uuid,boolean)',
     'set_account_status(uuid,account_status,boolean)','set_admin(uuid,boolean)','mark_notifications_read(bigint[])',
-    'password_changed()','set_notify_email(uuid,text)']) x),
+    'password_changed()','set_notify_email(uuid,text)',
+    'set_day_slot(date,smallint,boolean,boolean)','clear_day_slot(date,smallint,boolean)']) x),
   'authenticated EXECUTE set equals the allowlist');
 
 select ok(not has_sequence_privilege('authenticated', 'public.notifications_id_seq', 'USAGE'), 'authenticated has no USAGE on notifications_id_seq');

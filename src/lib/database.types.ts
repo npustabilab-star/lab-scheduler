@@ -151,14 +151,14 @@ isOneToOne: false
                   ]
                 },"slot_exceptions": {
                   Row: {
-                    "date": string,"id": number,"period": number | null,"user_id": string
+                    "date": string,"id": number,"kind": string,"period": number | null,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "date": string,"id"?: never,"period"?: number | null,"user_id": string
+                    "date": string,"id"?: never,"kind"?: string,"period"?: number | null,"user_id": string
                   }
                   Update: {
-                    "date"?: string,"id"?: never,"period"?: number | null,"user_id"?: string
+                    "date"?: string,"id"?: never,"kind"?: string,"period"?: number | null,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -230,11 +230,28 @@ isOneToOne: false
 "change_affected_json":
 { Args: { "p_ids": (string)[] }; Returns: Json
                            },
+"clear_day_slot":
+{ Args: { "p_confirm"?: boolean,"p_date": string,"p_period": number }; Returns: Json
+                           },
 "create_booking":
 { Args: { "p_date": string,"p_note"?: string,"p_period": number }; Returns: string
                            },
 "current_semester":
 { Args: Record<PropertyKey, never>; Returns: {
+              "end_date": string,
+"id": number,
+"is_current": boolean,
+"name": string,
+"start_date": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "semesters"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"day_slot_check":
+{ Args: { "p_date": string,"p_period": number }; Returns: {
               "end_date": string,
 "id": number,
 "is_current": boolean,
@@ -287,6 +304,9 @@ isOneToOne: false
                            },
 "set_admin":
 { Args: { "p_is_admin": boolean,"p_user": string }; Returns: undefined
+                           },
+"set_day_slot":
+{ Args: { "p_confirm"?: boolean,"p_date": string,"p_on": boolean,"p_period": number }; Returns: Json
                            },
 "set_mentor":
 { Args: { "p_confirm"?: boolean,"p_grad": string,"p_undergrad": string }; Returns: Json
