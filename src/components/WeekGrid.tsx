@@ -32,14 +32,14 @@ export default function WeekGrid({
   periods = DEFAULT_PERIODS,
 }: Props) {
   return (
-    <table className="w-full table-fixed border-separate border-spacing-0 overflow-hidden rounded-xl border border-sky-100 text-center text-sm">
+    <table className="w-full table-fixed border-separate border-spacing-0 overflow-hidden rounded-xl border border-sky-100 text-center text-base">
       <thead>
         <tr>
           <th className="w-10 bg-lab sm:w-24" />
           {WEEKDAYS.map((w) => (
             <th key={w} className="bg-lab p-1.5 font-semibold text-sky-950">
               {WEEKDAY_LABELS[w - 1]}
-              {days && <span className="block text-xs font-normal text-sky-900">{shortDate(days[w - 1])}</span>}
+              {days && <span className="block text-sm font-normal text-sky-900">{shortDate(days[w - 1])}</span>}
               {dayNotes?.[w] && <span className="block text-xs font-normal text-amber-800">{dayNotes[w]}</span>}
             </th>
           ))}
@@ -50,7 +50,7 @@ export default function WeekGrid({
           const p = info.period
           return (
             <tr key={p} data-row={p}>
-              <th scope="row" className={`border-t border-sky-100 p-1 text-xs font-medium ${info.label === '午休' ? 'bg-amber-50 text-amber-700' : 'bg-sky-50 text-sky-700'}`}>
+              <th scope="row" className={`border-t border-sky-100 p-1 text-sm font-medium ${info.label === '午休' ? 'bg-amber-50 text-amber-700' : 'bg-sky-50 text-sky-700'}`}>
                 <span className="sm:hidden">{info.label.replace(/[第節]/g, '')}</span>
                 <span className="hidden sm:inline">{info.label}</span>
                 {info.start && info.end && (
@@ -87,7 +87,7 @@ export default function WeekGrid({
                         : undefined
                     }
                     className={[
-                      'h-10 border-t border-l border-sky-100 align-middle transition-colors',
+                      'h-12 border-t border-l border-sky-100 align-middle transition-colors',
                       clickable ? 'cursor-pointer hover:bg-sky-50' : '',
                       uncovered
                         ? 'bg-rose-100'

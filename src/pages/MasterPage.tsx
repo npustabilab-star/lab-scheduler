@@ -109,7 +109,7 @@ export default function MasterPage() {
     : []
   return (
     <div className="p-2">
-      <h1 className="mb-2 text-xl font-bold">{semesterName ? `${semesterName}學期研究室班表` : '研究室班表'}</h1>
+      <h1 className="mb-2 text-2xl font-bold sm:text-3xl">{semesterName ? `${semesterName}學期研究室班表` : '研究室班表'}</h1>
       {error && (
         <p role="alert" className="mb-2 rounded bg-red-100 p-2 text-sm text-red-700">
           {error}
@@ -129,7 +129,7 @@ export default function MasterPage() {
               有 {missing.length} 個時段有兩位以上研究生，{isTeacher ? '請點格子設定主值' : '等老師設定主值'}（橘色框）
             </p>
           )}
-          <p className="mb-1 text-xs text-gray-500">★ 主值　<span className="rounded bg-amber-100 px-1 text-amber-800">黃色</span> 老師在校</p>
+          <p className="mb-1 text-sm text-gray-500">★ 主值　<span className="rounded bg-amber-100 px-1 text-amber-800">黃色</span> 老師在校</p>
           <WeekGrid
             highlightWeekdays={uncovered}
             periods={periods.length ? periods : undefined}
@@ -140,7 +140,7 @@ export default function MasterPage() {
               const lead = leadAt(w, p)
               const grads = list.filter((x) => !x.teacher)
               return (
-                <div className={`space-y-0.5 py-0.5 text-xs leading-tight ${needsLead(w, p) ? 'rounded ring-2 ring-orange-400' : ''}`}>
+                <div className={`space-y-1 py-1 text-sm leading-snug sm:text-base ${needsLead(w, p) ? 'rounded ring-2 ring-orange-400' : ''}`}>
                   {list
                     .filter((x) => x.teacher)
                     .map((t) => (

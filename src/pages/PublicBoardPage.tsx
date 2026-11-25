@@ -80,8 +80,8 @@ export default function PublicBoardPage() {
           <HeroArt className="hidden h-28 w-auto shrink-0 sm:block" />
         </section>
         <div className="card p-2 sm:p-4">
-        <h1 className="mb-2 text-xl font-bold">{semesterName ? `${semesterName}學期研究室班表` : '研究室班表'}</h1>
-        <p className="mb-2 text-sm text-gray-600">
+        <h1 className="mb-2 text-2xl font-bold sm:text-3xl">{semesterName ? `${semesterName}學期研究室班表` : '研究室班表'}</h1>
+        <p className="mb-2 text-base text-gray-600">
           每一節在研究室的研究生，<span className="rounded bg-amber-100 px-1 text-amber-800">黃色</span>為老師在校時間，★ 為主值
         </p>
         {error && (
@@ -104,7 +104,7 @@ export default function PublicBoardPage() {
                 const c = names.get(key(days[w - 1], p))
                 if (!c) return null
                 return (
-                  <div className="space-y-0.5 py-0.5 text-xs leading-tight">
+                  <div className="space-y-1 py-1 text-sm leading-snug sm:text-base">
                     {c.teacher.map((t) => (
                       <div key={t} className="rounded bg-amber-100 px-1 text-amber-800">
                         {t}老師
