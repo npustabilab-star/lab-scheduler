@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildEmail, type EmailInput } from './email'
+import { buildDutyLeadEmail, buildEmail, type EmailInput } from './email'
 
 const base: EmailInput = {
   type: 'booking_requested',
@@ -44,5 +44,16 @@ describe('buildEmail', () => {
     expect(buildEmail({ ...base, type: 'booking_confirmed' }).subject.startsWith('【研究室】預約已成立')).toBe(true)
     expect(buildEmail({ ...base, type: 'booking_cancelled' }).subject.startsWith('【研究室】預約已取消')).toBe(true)
     expect(buildEmail({ ...base, type: 'booking_expired' }).subject.startsWith('【研究室】預約已逾期')).toBe(true)
+  })
+})
+
+describe('reminders', () => {
+  it('booking reminder mentions the deadline', () => {
+    expect(buildEmail({ ...base, type: 'booking_reminder' }).subject).toContain('尚未確認')
+  })
+  it('duty lead reminder lists the periods', () => {
+    const e = buildDutyLeadEmail({ recipientName: '老師', date: '2026-03-03', detail: '第3節（甲、乙）', appUrl: 'x' })
+    expect(e.subject).toContain('3/3（二）')
+    expect(e.text).toContain('第3節（甲、乙）')
   })
 })

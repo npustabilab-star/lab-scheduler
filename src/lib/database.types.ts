@@ -103,14 +103,14 @@ isOneToOne: false
                   ]
                 },"notifications": {
                   Row: {
-                    "booking_id": string,"created_at": string,"emailed_at": string | null,"id": number,"read_at": string | null,"type": Database["public"]['Enums']["notification_type"],"user_id": string
+                    "booking_id": string | null,"created_at": string,"detail": string | null,"emailed_at": string | null,"id": number,"read_at": string | null,"ref_date": string | null,"type": Database["public"]['Enums']["notification_type"],"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "booking_id": string,"created_at"?: string,"emailed_at"?: string | null,"id"?: never,"read_at"?: string | null,"type": Database["public"]['Enums']["notification_type"],"user_id": string
+                    "booking_id"?: string | null,"created_at"?: string,"detail"?: string | null,"emailed_at"?: string | null,"id"?: never,"read_at"?: string | null,"ref_date"?: string | null,"type": Database["public"]['Enums']["notification_type"],"user_id": string
                   }
                   Update: {
-                    "booking_id"?: string,"created_at"?: string,"emailed_at"?: string | null,"id"?: never,"read_at"?: string | null,"type"?: Database["public"]['Enums']["notification_type"],"user_id"?: string
+                    "booking_id"?: string | null,"created_at"?: string,"detail"?: string | null,"emailed_at"?: string | null,"id"?: never,"read_at"?: string | null,"ref_date"?: string | null,"type"?: Database["public"]['Enums']["notification_type"],"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -338,6 +338,9 @@ isOneToOne: false
               "date": string,"period": number,"user_id": string
             }[]
                            },
+"send_daily_reminders":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "set_account_status":
 { Args: { "p_confirm"?: boolean,"p_status": Database["public"]['Enums']["account_status"],"p_user": string }; Returns: Json
                            },
@@ -376,7 +379,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "account_status": "pending"|"active"|"disabled","booking_status": "pending"|"confirmed"|"rejected"|"cancelled"|"expired","notification_type": "booking_requested"|"booking_confirmed"|"booking_rejected"|"booking_cancelled"|"booking_expired","user_role": "teacher"|"grad"|"undergrad"
+            "account_status": "pending"|"active"|"disabled","booking_status": "pending"|"confirmed"|"rejected"|"cancelled"|"expired","notification_type": "booking_requested"|"booking_confirmed"|"booking_rejected"|"booking_cancelled"|"booking_expired"|"booking_reminder"|"duty_lead_reminder","user_role": "teacher"|"grad"|"undergrad"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -496,7 +499,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "account_status": ["pending", "active", "disabled"],"booking_status": ["pending", "confirmed", "rejected", "cancelled", "expired"],"notification_type": ["booking_requested", "booking_confirmed", "booking_rejected", "booking_cancelled", "booking_expired"],"user_role": ["teacher", "grad", "undergrad"]
+            "account_status": ["pending", "active", "disabled"],"booking_status": ["pending", "confirmed", "rejected", "cancelled", "expired"],"notification_type": ["booking_requested", "booking_confirmed", "booking_rejected", "booking_cancelled", "booking_expired", "booking_reminder", "duty_lead_reminder"],"user_role": ["teacher", "grad", "undergrad"]
           }
         }
 } as const

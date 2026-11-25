@@ -27,7 +27,7 @@ export default function CalendarPage() {
     const isCurrent = beginLoad()
     const [from, to] = [days[0], days[4]]
     try {
-      const [{ periods }, rows, unc, gradRes, bookRes, ncRes] = await Promise.all([
+      const [{ periods, semesterId }, rows, unc, gradRes, bookRes, ncRes, leadRes] = await Promise.all([
         loadSemesterAndPeriods(),
         roster(from, to),
         uncoveredDays(from, to),
@@ -39,9 +39,10 @@ export default function CalendarPage() {
           .lte('date', to)
           .in('status', ['pending', 'confirmed']),
         supabase.from('no_class_days').select().gte('date', from).lte('date', to),
+        supabase.from('duty_leads').select(),
       ])
       if (!isCurrent()) return
-      for (const r of [gradRes, bookRes, ncRes]) if (r.error) throw new Error(r.error.message)
+      for (const r of [gradRes, bookRes, ncRes, leadRes]) if (r.error) throw new Error(r.error.message)
       const names = new Map((gradRes.data ?? []).map((g) => [g.id, g.display_name]))
       const bookings = (bookRes.data ?? []).map((b) => ({
         id: b.id,
@@ -50,7 +51,10 @@ export default function CalendarPage() {
         status: b.status,
         undergrad_name: (b.undergrad as { display_name: string } | null)?.display_name ?? '',
       }))
-      setCells(buildWeekCells({ roster: rows, names, bookings }))
+      const leads = new Map(
+        (leadRes.data ?? []).filter((l) => l.semester_id === semesterId).map((l) => [`${l.weekday}|${l.period}`, l.user_id]),
+      )
+      setCells(buildWeekCells({ roster: rows, names, bookings, leads }))
       setPeriods(periods)
       setUncovered(unc)
       setNoClass(new Map((ncRes.data ?? []).map((n) => [n.date, n.note])))
@@ -63,7 +67,7 @@ export default function CalendarPage() {
   useEffect(() => {
     void load()
   }, [load])
-  useTableChanges(['weekly_slots', 'slot_exceptions', 'bookings', 'no_class_days'], () => void load())
+  useTableChanges(['weekly_slots', 'slot_exceptions', 'bookings', 'no_class_days', 'duty_leads'], () => void load())
 
   const weekdayOf = (dates: string[]) => days.flatMap((d, i) => (dates.includes(d) ? [i + 1] : []))
   const greyWeekdays = weekdayOf([...noClass.keys()])

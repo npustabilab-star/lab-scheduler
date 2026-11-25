@@ -11,6 +11,8 @@ const LABELS: Record<NotificationRow['type'], string> = {
   booking_rejected: '預約被婉拒',
   booking_cancelled: '預約已取消',
   booking_expired: '預約已逾期失效',
+  booking_reminder: '提醒：有預約尚未確認，明天到期',
+  duty_lead_reminder: '提醒：明天有時段尚未設定主值',
 }
 
 const TIME_FMT = new Intl.DateTimeFormat('zh-TW', {
@@ -74,6 +76,7 @@ export default function NotificationBell() {
           {items.map((n) => (
             <li key={n.id} className="border-b p-3 text-sm last:border-b-0">
               <div>{LABELS[n.type]}</div>
+              {n.detail && <div className="text-xs text-gray-700">{n.ref_date} {n.detail}</div>}
               <div className="text-xs text-gray-500">{formatNotificationTime(n.created_at)}</div>
             </li>
           ))}

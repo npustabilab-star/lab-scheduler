@@ -39,3 +39,18 @@ describe('buildWeekCells', () => {
     expect(cells.get(cellKey('2026-11-25', 3))?.meetings).toEqual(['會議：王小美（待確認）', '會議：李大華'])
   })
 })
+
+describe('buildWeekCells 主值', () => {
+  it('stars the lead for that weekday and period and lists them first', () => {
+    const cells = buildWeekCells({
+      roster: [
+        { date: '2026-03-02', user_id: 'a', period: 3 },
+        { date: '2026-03-02', user_id: 'b', period: 3 },
+      ],
+      names: new Map([['a', '甲'], ['b', '乙']]),
+      bookings: [],
+      leads: new Map([['1|3', 'b']]),
+    })
+    expect(cells.get(cellKey('2026-03-02', 3))?.names).toEqual(['★乙', '甲'])
+  })
+})

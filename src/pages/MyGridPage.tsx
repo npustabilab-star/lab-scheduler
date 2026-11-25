@@ -28,6 +28,7 @@ export default function MyGridPage() {
   const [loaded, setLoaded] = useState(false)
   const [semester, setSemester] = useState<Semester | null>(null)
   const [template, setTemplate] = useState<Set<string>>(new Set())
+  const [leadSlots, setLeadSlots] = useState<Set<string>>(new Set())
   const [exceptions, setExceptions] = useState<Exc[]>([])
   const [noClass, setNoClass] = useState<Map<string, string>>(new Map())
   const [periods, setPeriods] = useState<PeriodInfo[]>([])
@@ -54,15 +55,17 @@ export default function MyGridPage() {
       }
       const wk = weekOf(monday).days
       const [from, to] = [wk[0], wk[4]]
-      const [slots, exc, nc] = await Promise.all([
+      const [slots, exc, nc, leads] = await Promise.all([
         supabase.from('weekly_slots').select().eq('user_id', profile.id).eq('semester_id', semesterId),
         supabase.from('slot_exceptions').select().eq('user_id', profile.id).gte('date', from).lte('date', to),
         supabase.from('no_class_days').select().gte('date', from).lte('date', to),
+        supabase.from('duty_leads').select().eq('user_id', profile.id).eq('semester_id', semesterId),
       ])
       if (!isCurrent()) return
-      for (const r of [slots, exc, nc]) if (r.error) throw new Error(r.error.message)
+      for (const r of [slots, exc, nc, leads]) if (r.error) throw new Error(r.error.message)
       setSemester(sem)
       setTemplate(new Set((slots.data ?? []).map((s) => slotKey(s.weekday, s.period))))
+      setLeadSlots(new Set((leads.data ?? []).map((l) => slotKey(l.weekday, l.period))))
       setExceptions((exc.data ?? []).map((x) => ({ date: x.date, period: x.period, kind: x.kind })))
       setNoClass(new Map((nc.data ?? []).map((n) => [n.date, n.note])))
       setPeriods(periods)
@@ -78,7 +81,7 @@ export default function MyGridPage() {
   useEffect(() => {
     void load()
   }, [load])
-  useTableChanges(['weekly_slots', 'slot_exceptions', 'no_class_days'], () => void load())
+  useTableChanges(['duty_leads', 'weekly_slots', 'slot_exceptions', 'no_class_days'], () => void load())
 
   const ask = (affected: AffectedBooking[]) => new Promise<boolean>((resolve) => setPending({ affected, resolve }))
   const settle = (ok: boolean) => {
@@ -157,7 +160,7 @@ export default function MyGridPage() {
                 const c = cell(w, p)
                 return (
                   <>
-                    {c.effective ? '✓' : null}
+                    {c.effective ? (leadSlots.has(slotKey(w, p)) ? '★ 主值' : '✓') : null}
                     {c.adjusted && (
                       <span className="block text-[10px] leading-tight text-orange-700">本週調整</span>
                     )}

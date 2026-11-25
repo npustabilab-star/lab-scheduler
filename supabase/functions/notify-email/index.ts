@@ -2,7 +2,7 @@
 // Called by the DB trigger queue_notification_email() with the service role key.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts'
-import { buildEmail, type EmailInput } from './email.ts'
+import { buildDutyLeadEmail, buildEmail, type EmailInput } from './email.ts'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
@@ -25,10 +25,51 @@ Deno.serve(async (req) => {
   const db = createClient(Deno.env.get('SUPABASE_URL')!, serviceKey)
 
   const { data: n, error: nErr } = await db
-    .from('notifications').select('id, user_id, type, booking_id, emailed_at').eq('id', id).maybeSingle()
+    .from('notifications').select('id, user_id, type, booking_id, ref_date, detail, emailed_at').eq('id', id).maybeSingle()
   if (nErr) return json({ error: 'lookup failed' }, 500)
   if (!n) return json({ error: 'notification not found' }, 404)
   if (n.emailed_at) return json({ skipped: 'already emailed' })
+
+  const markHandled = async () =>
+    (await db.from('notifications').update({ emailed_at: new Date().toISOString() }).eq('id', id)).error
+
+  const send = async (to: string, subject: string, text: string): Promise<Response | null> => {
+    const user = Deno.env.get('GMAIL_USER')!
+    const smtp = new SMTPClient({
+      connection: {
+        hostname: 'smtp.gmail.com',
+        port: 465,
+        tls: true,
+        auth: { username: user, password: Deno.env.get('GMAIL_APP_PASSWORD')! },
+      },
+    })
+    try {
+      await smtp.send({ from: user, to, subject, content: text })
+    } catch (e) {
+      console.error('send failed:', e instanceof Error ? e.message : 'unknown error')
+      return json({ error: 'send failed' }, 502)
+    } finally {
+      await smtp.close().catch(() => {})
+    }
+    return null
+  }
+
+  if (n.type === 'duty_lead_reminder') {
+    const { data: r } = await db.from('profiles').select('notify_email, display_name').eq('id', n.user_id).single()
+    if (!r) return json({ error: 'missing related rows' }, 500)
+    if (r.notify_email && n.ref_date) {
+      const { subject, text } = buildDutyLeadEmail({
+        recipientName: r.display_name,
+        date: n.ref_date,
+        detail: n.detail ?? '',
+        appUrl: Deno.env.get('APP_URL') ?? '',
+      })
+      const failed = await send(r.notify_email, subject, text)
+      if (failed) return failed
+    }
+    if (await markHandled()) return json({ error: 'failed to mark emailed_at' }, 500)
+    return json({ sent: !!r.notify_email })
+  }
 
   const { data: b, error: bErr } = await db
     .from('bookings').select('undergrad_id, date, period, note, reason').eq('id', n.booking_id).single()
@@ -49,7 +90,7 @@ Deno.serve(async (req) => {
   }
 
   const input: EmailInput = {
-    type: n.type,
+    type: n.type as EmailInput['type'],
     recipientName: recipient.display_name,
     undergradName: undergrad.display_name,
     date: b.date,
@@ -63,23 +104,8 @@ Deno.serve(async (req) => {
   }
   const { subject, text } = buildEmail(input)
 
-  const user = Deno.env.get('GMAIL_USER')!
-  const smtp = new SMTPClient({
-    connection: {
-      hostname: 'smtp.gmail.com',
-      port: 465,
-      tls: true,
-      auth: { username: user, password: Deno.env.get('GMAIL_APP_PASSWORD')! },
-    },
-  })
-  try {
-    await smtp.send({ from: user, to: recipient.notify_email, subject, content: text })
-  } catch (e) {
-    console.error('send failed:', e instanceof Error ? e.message : 'unknown error')
-    return json({ error: 'send failed' }, 502)
-  } finally {
-    await smtp.close().catch(() => {})
-  }
+  const failed = await send(recipient.notify_email, subject, text)
+  if (failed) return failed
 
   const { error: uErr } = await db
     .from('notifications').update({ emailed_at: new Date().toISOString() }).eq('id', id)
