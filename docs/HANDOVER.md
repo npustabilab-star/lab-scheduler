@@ -137,6 +137,36 @@ git credential-manager github logout
 git push
 ```
 
+### 自動部署（GitHub Actions）
+
+設定好之後，**只要推送到 `main`（`git push`），GitHub 會自動依序做：前端測試 → 推送資料庫更新 → 部署兩個後台函式 → 打包並部署網站**，不必再手動執行第 3、5、7 節的指令。設定檔是 `.github/workflows/deploy.yml`。
+
+每次部署的結果在 GitHub repo 的 **Actions** 分頁查看（綠勾成功、紅叉失敗，點進去看是哪一步）；失敗時 GitHub 會寄信給推送的人。也可以在 Actions → Deploy → **Run workflow** 手動重跑。
+
+**第一次要設定的值**（GitHub repo → Settings → Secrets and variables → Actions）：
+
+Secrets（機密，設定後看不到內容）：
+
+| 名稱 | 去哪裡拿 |
+|---|---|
+| `SUPABASE_ACCESS_TOKEN` | supabase.com → 右上頭像 → Account preferences → **Access Tokens** → Generate new token |
+| `SUPABASE_DB_PASSWORD` | 建立 Supabase 專案時設的資料庫密碼（忘了可在 Project Settings → Database → Reset database password 重設） |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare → 右上頭像 → My Profile → **API Tokens** → Create Token → 範本 **Edit Cloudflare Workers** |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare → Workers & Pages 首頁右側的 **Account ID** |
+
+Variables（一般設定值，切到 Variables 分頁）：
+
+| 名稱 | 值 |
+|---|---|
+| `SUPABASE_PROJECT_REF` | `muehypeofgmbqhsvuccd` |
+| `VITE_SUPABASE_URL` | `https://muehypeofgmbqhsvuccd.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | Supabase → Project Settings → API Keys → Legacy 分頁的 **anon** key（公開用，不是 service_role） |
+
+注意：
+- 寄信用的 Gmail 密碼（`GMAIL_APP_PASSWORD` 等）存在 Supabase 的 secrets 裡，不用放到 GitHub；只有要更換時才需要手動執行第 5 節的 `secrets set`。
+- 建立第一位管理者（第 6 節）仍是手動步驟，只需做一次。
+- 推送到 `main` 就等於上線；有把握再推。
+
 ## 9. 部署後驗證（smoke test）
 
 建議在建立「正式學期」**之前**執行；若正式學期已存在，測試學期的日期不可與它重疊（學期日期區間不可重疊，資料庫會拒絕）。測試期間請讓測試用的日期範圍遠離正式學期，例如正式學期是 2026-09-01 ~ 2027-01-31，測試學期可用 2027-03-01 ~ 2027-03-31。
