@@ -46,3 +46,6 @@ begin
     from public.profiles p where p.id = p_undergrad;
   return v_id;
 end $$;
+
+-- helpers are called by tests while logged in as authenticated/anon
+grant execute on all functions in schema tests to authenticated, anon;

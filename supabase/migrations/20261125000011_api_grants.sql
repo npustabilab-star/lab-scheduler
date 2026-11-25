@@ -15,6 +15,8 @@ revoke execute on all functions in schema public from public, anon, authenticate
 alter default privileges for role postgres in schema public revoke all on tables from anon, authenticated, service_role;
 alter default privileges for role postgres in schema public revoke all on sequences from anon, authenticated, service_role;
 alter default privileges for role postgres in schema public revoke all on functions from public, anon, authenticated, service_role;
+-- PUBLIC's implicit EXECUTE default is global, not per-schema
+alter default privileges for role postgres revoke execute on functions from public;
 
 grant usage on schema public to anon, authenticated, service_role;
 
