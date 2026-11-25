@@ -58,7 +58,11 @@ Deno.serve(async (req) => {
       p_is_admin: false,
     })
     if (sErr) {
-      await db.auth.admin.deleteUser(created.user.id)
+      const { error: dErr } = await db.auth.admin.deleteUser(created.user.id)
+      if (dErr) {
+        console.error('rollback deleteUser failed', created.user.id, dErr.message)
+        return fail('建立失敗，且無法自動清除，請聯絡系統維護者')
+      }
       return fail(dbErrorMessage(sErr))
     }
     return json({ ok: true })
@@ -77,7 +81,10 @@ Deno.serve(async (req) => {
       return fail(GENERIC_ERROR)
     }
     const { error: fErr } = await db.rpc('admin_reset_flag', { p_user: userId })
-    if (fErr) return fail(dbErrorMessage(fErr))
+    if (fErr) {
+      console.error('admin_reset_flag failed after password update', userId, fErr.message)
+      return fail(dbErrorMessage(fErr))
+    }
     return json({ ok: true })
   }
 

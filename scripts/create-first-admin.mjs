@@ -1,7 +1,7 @@
 // Usage: node scripts/create-first-admin.mjs <代碼> <姓名> <Email> <密碼>
 // Env:   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 import { createClient } from '@supabase/supabase-js'
-import { loginEmail, toAuthPassword } from '../supabase/functions/_shared/credentials.ts'
+import { loginEmail, normalizeStudentId, toAuthPassword } from './credentials.mjs'
 
 const [studentId, name, email, password] = process.argv.slice(2)
 if (!studentId || !name || !email || !password) {
@@ -10,6 +10,10 @@ if (!studentId || !name || !email || !password) {
 }
 if (password.length < 8) {
   console.error('密碼至少 8 碼')
+  process.exit(1)
+}
+if (!/^[^s@]+@[^s@]+.[^s@]+$/.test(email.trim())) {
+  console.error('Email 格式不正確')
   process.exit(1)
 }
 const url = process.env.SUPABASE_URL
@@ -34,13 +38,14 @@ const id = data.user.id
 
 const rollback = async (msg) => {
   console.error(msg)
-  await db.auth.admin.deleteUser(id)
+  const { error: dErr } = await db.auth.admin.deleteUser(id)
+  if (dErr) console.error(`rollback deleteUser failed，請手動刪除殘留的 auth user：${id}（${dErr.message}）`)
   process.exit(1)
 }
 
 const { error: sErr } = await db.rpc('admin_setup_member', {
-  p_user: id, p_student_id: studentId, p_display_name: name, p_role: 'teacher',
-  p_mentor: null, p_notify_email: email, p_is_admin: true,
+  p_user: id, p_student_id: normalizeStudentId(studentId), p_display_name: name, p_role: 'teacher',
+  p_mentor: null, p_notify_email: email.trim(), p_is_admin: true,
 })
 if (sErr) await rollback(`設定成員失敗：${sErr.message}`)
 

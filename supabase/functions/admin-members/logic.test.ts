@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { initialPassword, loginEmail, normalizeStudentId, toAuthPassword } from '../_shared/credentials'
-import { requireAdmin, validateCreateInput } from './logic'
+import { dbErrorMessage, requireAdmin, validateCreateInput } from './logic'
 
 describe('credentials', () => {
   it('normalizes, derives email, password', () => {
@@ -52,5 +52,22 @@ describe('requireAdmin', () => {
     expect(requireAdmin({ status: 'active', is_admin: false, must_change_password: false })).toBe(false)
     expect(requireAdmin({ status: 'pending', is_admin: true, must_change_password: false })).toBe(false)
     expect(requireAdmin({ status: 'active', is_admin: true, must_change_password: false })).toBe(true)
+  })
+})
+
+describe('dbErrorMessage', () => {
+  it('maps codes and falls back', () => {
+    expect(dbErrorMessage({ message: 'STUDENT_ID_EXISTS' })).toBe('這個學號已經在名單中')
+    expect(dbErrorMessage({ message: 'boom' })).toBe('發生錯誤，請稍後再試')
+    expect(dbErrorMessage(null)).toBe('發生錯誤，請稍後再試')
+  })
+})
+
+describe('scripts/credentials.mjs matches shared credentials.ts', () => {
+  it.each([' B11234567 ', 'teacher', 'S100X'])('same output for %j', async (input) => {
+    const m = await import('../../../scripts/credentials.mjs')
+    expect(m.normalizeStudentId(input)).toBe(normalizeStudentId(input))
+    expect(m.loginEmail(input)).toBe(loginEmail(input))
+    expect(m.toAuthPassword(initialPassword(input))).toBe(toAuthPassword(initialPassword(input)))
   })
 })
