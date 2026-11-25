@@ -1,4 +1,3 @@
-import { periodLabel } from './grid'
 import type { PeriodInfo } from './grid'
 import { supabase } from './supabase'
 
@@ -21,11 +20,10 @@ export async function loadSemesterAndPeriods(): Promise<Loaded> {
   ])
   if (sem.error) throw new Error(sem.error.message)
   if (per.error) throw new Error(per.error.message)
-  const rows = (per.data ?? []) as { period: number; label?: string | null; start_time: string; end_time: string }[]
-  const periods: (PeriodInfo & { start: string; end: string })[] = rows
+  const periods: (PeriodInfo & { start: string; end: string })[] = (per.data ?? [])
     .map((p) => ({
       period: p.period,
-      label: p.label || periodLabel(p.period),
+      label: p.label,
       start: p.start_time.slice(0, 5),
       end: p.end_time.slice(0, 5),
     }))

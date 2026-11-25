@@ -11,8 +11,8 @@ import type { Database } from '../lib/database.types'
 
 type Role = Database['public']['Enums']['user_role']
 type Semester = Database['public']['Tables']['semesters']['Row']
-type Period = Database['public']['Tables']['periods']['Row'] & { label?: string | null }
-const labelFor = (p: Period): string => p.label || periodLabel(p.period)
+type Period = Database['public']['Tables']['periods']['Row']
+const labelFor = (p: Period): string => p.label
 type NoClassDay = Database['public']['Tables']['no_class_days']['Row']
 type Pending = { affected: AffectedBooking[]; resolve: (ok: boolean) => void }
 

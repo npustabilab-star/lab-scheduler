@@ -146,8 +146,8 @@ describe('AdminPage reset password', () => {
 
 describe('AdminPage period times', () => {
   const periods = [
-    { period: 1, start_time: '08:10:00', end_time: '09:00:00' },
-    { period: 2, start_time: '09:10:00', end_time: '10:00:00' },
+    { period: 1, label: '第1節', start_time: '08:10:00', end_time: '09:00:00' },
+    { period: 2, label: '第2節', start_time: '09:10:00', end_time: '10:00:00' },
   ]
   const open = async () => {
     h.tables.periods = periods
@@ -199,8 +199,8 @@ describe('AdminPage semesters', () => {
 describe('AdminPage period times (24h text input)', () => {
   const open = async () => {
     h.tables.periods = [
-      { period: 1, start_time: '08:10:00', end_time: '09:00:00' },
-      { period: 2, start_time: '09:10:00', end_time: '10:00:00' },
+      { period: 1, label: '第1節', start_time: '08:10:00', end_time: '09:00:00' },
+      { period: 2, label: '第2節', start_time: '09:10:00', end_time: '10:00:00' },
     ]
     const user = userEvent.setup()
     render(<AdminPage />)
