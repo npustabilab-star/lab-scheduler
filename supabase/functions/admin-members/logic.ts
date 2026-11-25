@@ -13,6 +13,8 @@ export type CreateInput = {
 export type ValidateResult = { ok: true; value: CreateInput } | { ok: false; message: string }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+// Must match the check in admin_setup_member (DB).
+export const STUDENT_ID_RE = /^[a-z0-9._-]{4,}$/
 const ROLES: Role[] = ['teacher', 'grad', 'undergrad']
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '')
@@ -21,6 +23,7 @@ export function validateCreateInput(x: unknown): ValidateResult {
   const o = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>
   const student_id = normalizeStudentId(str(o.student_id))
   if (student_id.length < 4) return { ok: false, message: '學號至少 4 碼' }
+  if (!STUDENT_ID_RE.test(student_id)) return { ok: false, message: '學號只能包含英文字母、數字與 . _ -' }
   const display_name = str(o.display_name).trim()
   if (!display_name) return { ok: false, message: '請輸入姓名' }
   const role = o.role as Role
@@ -41,7 +44,7 @@ export function requireAdmin(
 
 const DB_MESSAGES: Record<string, string> = {
   STUDENT_ID_EXISTS: '這個學號已經在名單中',
-  INVALID_STUDENT_ID: '學號至少 4 碼',
+  INVALID_STUDENT_ID: '學號至少 4 碼，只能包含英文字母、數字與 . _ -',
   EMAIL_REQUIRED: '老師必須填寫 Email',
   TEACHER_EXISTS: '系統中已經有一位老師',
   INVALID_MENTOR: '指導研究生必須是已啟用的研究生',

@@ -17,6 +17,14 @@ describe('validateCreateInput', () => {
       ok: false, message: '學號至少 4 碼',
     })
   })
+  it('rejects characters outside a-z 0-9 . _ -', () => {
+    for (const bad of ['ab cd', 'ab/cd', 'ab@cd', '學號學號']) {
+      expect(validateCreateInput({ student_id: bad, display_name: 'a', role: 'grad' })).toEqual({
+        ok: false, message: '學號只能包含英文字母、數字與 . _ -',
+      })
+    }
+    expect(validateCreateInput({ student_id: 'A.b_c-1', display_name: 'a', role: 'grad' }).ok).toBe(true)
+  })
   it('requires display name', () => {
     expect(validateCreateInput({ student_id: 'b1234', display_name: ' ', role: 'grad' })).toEqual({
       ok: false, message: '請輸入姓名',
@@ -83,5 +91,20 @@ describe('isValidEmail (scripts) agrees with logic.ts', () => {
     expect(m.isValidEmail(email)).toBe(expected)
     const r = validateCreateInput({ student_id: 'b1234', display_name: 'a', role: 'grad', notify_email: email })
     expect(r.ok).toBe(expected)
+  })
+})
+
+describe('isValidStudentId (scripts) agrees with logic.ts', () => {
+  it.each([
+    ['b11234567', true],
+    [' S100X ', true],
+    ['a.b_c-1', true],
+    ['abc', false],
+    ['ab cd', false],
+    ['ab/cd', false],
+  ])('%j -> %s', async (id, expected) => {
+    const m = await import('../../../scripts/credentials.mjs')
+    expect(m.isValidStudentId(id)).toBe(expected)
+    expect(validateCreateInput({ student_id: id, display_name: 'a', role: 'grad' }).ok).toBe(expected)
   })
 })

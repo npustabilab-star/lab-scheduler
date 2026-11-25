@@ -1,11 +1,15 @@
 // Usage: node scripts/create-first-admin.mjs <代碼> <姓名> <Email> <密碼>
 // Env:   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 import { createClient } from '@supabase/supabase-js'
-import { isValidEmail, loginEmail, normalizeStudentId, toAuthPassword } from './credentials.mjs'
+import { isValidEmail, isValidStudentId, loginEmail, normalizeStudentId, toAuthPassword } from './credentials.mjs'
 
 const [studentId, name, email, password] = process.argv.slice(2)
 if (!studentId || !name || !email || !password) {
   console.error('用法：node scripts/create-first-admin.mjs <代碼> <姓名> <Email> <密碼>')
+  process.exit(1)
+}
+if (!isValidStudentId(studentId)) {
+  console.error('學號只能包含英文字母、數字與 . _ -，且至少 4 碼')
   process.exit(1)
 }
 if (password.length < 8) {

@@ -18,3 +18,8 @@ export function isValidEmail(s) {
 export function toAuthPassword(input) {
   return `lab-scheduler:${input}`
 }
+
+// Must match STUDENT_ID_RE in supabase/functions/admin-members/logic.ts and the DB check.
+export function isValidStudentId(s) {
+  return /^[a-z0-9._-]{4,}$/.test(normalizeStudentId(s))
+}
