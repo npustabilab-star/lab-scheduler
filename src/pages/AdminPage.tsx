@@ -163,7 +163,7 @@ export default function AdminPage() {
                       重設密碼
                     </button>
                   </div>
-                  <NotifyEmail profile={p} onSave={(email) => void act(() => api.setNotifyEmail(p.id, email))} />
+                  <NotifyEmail key={p.notify_email ?? ''} profile={p} onSave={(email) => void act(() => api.setNotifyEmail(p.id, email))} />
                 </li>
               ))}
             </ul>

@@ -43,6 +43,18 @@ describe('active user without a role', () => {
   }
 })
 
+describe('disabled with must change password', () => {
+  it('goes to /pending, not /change-password', () => {
+    profile = { ...base, role: 'grad', status: 'disabled', must_change_password: true }
+    render(
+      <MemoryRouter initialEntries={['/change-password']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    )
+    expect(screen.getByText('帳號已停用')).toBeInTheDocument()
+  })
+})
+
 describe('must change password', () => {
   for (const path of ['/change-password', '/calendar', '/pending', '/login']) {
     it(`only ever lands on /change-password (from ${path})`, () => {

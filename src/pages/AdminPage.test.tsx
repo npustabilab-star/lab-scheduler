@@ -102,6 +102,16 @@ describe('AdminPage member creation', () => {
     )
   })
 
+  it('blocks a teacher without an email', async () => {
+    const user = await open()
+    await user.type(screen.getByLabelText('學號'), 'T0001')
+    await user.type(screen.getByLabelText('姓名'), '老師')
+    await user.selectOptions(screen.getByLabelText('身分'), 'teacher')
+    await user.click(screen.getByRole('button', { name: '新增成員' }))
+    expect(screen.getByRole('alert').textContent).toContain('老師必須填寫 Email')
+    expect(h.createMember).not.toHaveBeenCalled()
+  })
+
   it('shows the friendly message when the student id already exists', async () => {
     h.createMember.mockRejectedValue(new AppError('STUDENT_ID_EXISTS'))
     const user = await open()

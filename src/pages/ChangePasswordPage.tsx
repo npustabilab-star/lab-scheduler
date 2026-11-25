@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { toAuthPassword } from '../lib/credentials'
@@ -13,6 +13,8 @@ export default function ChangePasswordPage() {
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // Set once updateUser succeeded: a retry must only re-call the RPC (Supabase rejects an identical new password).
+  const passwordUpdated = useRef(false)
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -22,8 +24,11 @@ export default function ChangePasswordPage() {
     setBusy(true)
     setError(null)
     try {
-      const { error: updateErr } = await supabase.auth.updateUser({ password: toAuthPassword(pw) })
-      if (updateErr) return setError(FAILED)
+      if (!passwordUpdated.current) {
+        const { error: updateErr } = await supabase.auth.updateUser({ password: toAuthPassword(pw) })
+        if (updateErr) return setError(FAILED)
+        passwordUpdated.current = true
+      }
       const { error: flagErr } = await supabase.rpc('password_changed')
       if (flagErr) return setError(FAILED)
       await refresh()

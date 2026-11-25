@@ -43,6 +43,8 @@ describe('homeFor', () => {
     expect(homeFor(p({ status: 'active', role: null }))).toBe('/pending'))
   it('active must-change -> /change-password', () =>
     expect(homeFor(p({ must_change_password: true }))).toBe('/change-password'))
+  it('disabled with must-change -> /pending', () =>
+    expect(homeFor(p({ status: 'disabled', must_change_password: true }))).toBe('/pending'))
   it('grad -> /calendar', () => expect(homeFor(p({}))).toBe('/calendar'))
   it('undergrad -> /booking', () => expect(homeFor(p({ role: 'undergrad' }))).toBe('/booking'))
 })

@@ -154,6 +154,21 @@ describe('ChangePasswordPage', () => {
     expect(h.rpc).toHaveBeenCalledWith('password_changed')
   })
 
+  it('retries only the RPC after a partial failure', async () => {
+    h.updateUser.mockResolvedValue({ error: null })
+    h.rpc.mockResolvedValueOnce({ error: { message: 'network' } }).mockResolvedValueOnce({ error: null })
+    const user = userEvent.setup()
+    render(<ChangePasswordPage />)
+    await user.type(screen.getByLabelText('新密碼'), 'abcdefgh')
+    await user.type(screen.getByLabelText('確認新密碼'), 'abcdefgh')
+    await user.click(screen.getByRole('button', { name: '更改密碼' }))
+    expect((await screen.findByRole('alert')).textContent).toContain('密碼更新失敗')
+    await user.click(screen.getByRole('button', { name: '更改密碼' }))
+    await waitFor(() => expect(h.auth.refresh).toHaveBeenCalled())
+    expect(h.updateUser).toHaveBeenCalledTimes(1)
+    expect(h.rpc).toHaveBeenCalledTimes(2)
+  })
+
   it('does not call password_changed when updateUser fails', async () => {
     h.updateUser.mockResolvedValue({ error: { message: 'weak' } })
     const user = userEvent.setup()
