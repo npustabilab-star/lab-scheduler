@@ -71,6 +71,24 @@ npx supabase functions deploy admin-members --project-ref muehypeofgmbqhsvuccd
 
 - `GMAIL_USER`、`GMAIL_APP_PASSWORD`、`APP_URL` 是 `notify-email` 讀取的環境變數；`admin-members` 只使用 Supabase 自動提供的 `SUPABASE_URL`、`SUPABASE_SERVICE_ROLE_KEY`，不需要額外設定。
 
+### 升級既有雲端專案
+
+如果這個雲端專案在改成學號登入之前就已經有人用 Google 登入過，先清掉舊流程留下的帳號，再建立第一位管理者：
+
+1. 到 Dashboard → SQL Editor 執行：
+   ```sql
+   select id, email, status, role, is_admin from profiles where student_id is null;
+   ```
+2. 如果有任何列，這些都是舊的 Google 流程留下的帳號：到 Authentication → Users 把它們刪除（專題生要先刪，研究生之後再刪）。
+3. 確認 Authentication → Providers → **Google 已關閉**。
+4. 也可以再檢查有沒有看不到的待核准殘留：
+   ```sql
+   select id, email from profiles where status = 'pending';
+   ```
+   有列出來的也一併在 Authentication → Users 刪除。
+
+清理完成後再執行下面的 `create-first-admin`。
+
 ## 6. 建立第一位管理者（老師）
 
 沒有任何成員時無法登入，需要先用腳本建立老師帳號。service_role key 一樣使用 Legacy 分頁的 `eyJ…` 金鑰。
