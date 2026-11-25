@@ -61,6 +61,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"duty_leads": {
+                  Row: {
+                    "period": number,"semester_id": number,"user_id": string,"weekday": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "period": number,"semester_id": number,"user_id": string,"weekday": number
+                  }
+                  Update: {
+                    "period"?: number,"semester_id"?: number,"user_id"?: string,"weekday"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "duty_leads_semester_id_fkey"
+      columns: ["semester_id"]
+isOneToOne: false
+      referencedRelation: "semesters"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "duty_leads_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"no_class_days": {
                   Row: {
                     "date": string,"note": string
@@ -290,7 +316,7 @@ isOneToOne: false
                            },
 "public_board":
 { Args: { "p_from": string,"p_to": string }; Returns: {
-              "date": string,"display_name": string,"is_teacher": boolean,"period": number
+              "date": string,"display_name": string,"is_lead": boolean,"is_teacher": boolean,"period": number
             }[]
                            },
 "public_periods":
@@ -323,6 +349,9 @@ isOneToOne: false
                            },
 "set_display_name":
 { Args: { "p_name": string,"p_user": string }; Returns: undefined
+                           },
+"set_duty_lead":
+{ Args: { "p_period": number,"p_user": string,"p_weekday": number }; Returns: undefined
                            },
 "set_mentor":
 { Args: { "p_confirm"?: boolean,"p_grad": string,"p_undergrad": string }; Returns: Json

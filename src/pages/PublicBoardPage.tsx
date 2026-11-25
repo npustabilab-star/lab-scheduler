@@ -30,7 +30,7 @@ export default function PublicBoardPage() {
       for (const r of rows ?? []) {
         const k = key(r.date, r.period)
         const c = m.get(k) ?? { grads: [], teacher: [] }
-        ;(r.is_teacher ? c.teacher : c.grads).push(r.display_name)
+        ;(r.is_teacher ? c.teacher : c.grads).push(r.is_lead && !r.is_teacher ? `★${r.display_name}` : r.display_name)
         m.set(k, c)
       }
       setNames(m)
@@ -64,7 +64,7 @@ export default function PublicBoardPage() {
       <main className="p-2">
         <h1 className="mb-2 text-xl font-bold">總表</h1>
         <p className="mb-2 text-sm text-gray-600">
-          每一節在研究室的研究生，<span className="rounded bg-amber-100 px-1 text-amber-800">黃色</span>為老師在校時間
+          每一節在研究室的研究生，<span className="rounded bg-amber-100 px-1 text-amber-800">黃色</span>為老師在校時間，★ 為主值
         </p>
         {error && (
           <p role="alert" className="mb-2 rounded bg-red-100 p-2 text-sm text-red-700">

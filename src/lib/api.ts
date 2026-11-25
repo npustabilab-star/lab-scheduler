@@ -119,3 +119,7 @@ export const publicPeriods = (): Promise<Fns['public_periods']['Returns']> => ca
 
 export const setDisplayName = (userId: string, name: string) =>
   call(supabase.rpc('set_display_name', { p_user: userId, p_name: name }))
+
+/** Teacher only: who leads a weekly slot with several grads (null clears). */
+export const setDutyLead = (weekday: number, period: number, userId: string | null) =>
+  call(supabase.rpc('set_duty_lead', { p_weekday: weekday, p_period: period, p_user: userId as string }))

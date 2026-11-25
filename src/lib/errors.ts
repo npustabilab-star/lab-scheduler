@@ -17,6 +17,7 @@ const MESSAGES: Record<string, string> = {
   NOT_UNDERGRAD: '只有專題生可以預約',
   STUDENT_ID_EXISTS: '這個學號已經在名單中',
   EMAIL_REQUIRED: '老師必須填寫 Email',
+  NOT_ON_DUTY: '主值必須是這個時段有值班的研究生',
   INVALID_NAME: '姓名不可空白，最多 30 個字',
   INVALID_STUDENT_ID: '學號至少 4 碼，只能包含英文字母、數字與 . _ -',
   NOT_EDITABLE: '這一天不能修改（已過去、停課或不在學期內）',

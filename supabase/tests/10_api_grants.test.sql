@@ -80,7 +80,7 @@ select is((select coalesce(array_agg(replace(p.oid::regprocedure::text, ', ', ',
     'set_account_status(uuid,account_status,boolean)','set_admin(uuid,boolean)','mark_notifications_read(bigint[])',
     'password_changed()','set_notify_email(uuid,text)',
     'set_day_slot(date,smallint,boolean,boolean)','clear_day_slot(date,smallint,boolean)',
-    'public_board(date,date)','public_periods()','set_display_name(uuid,text)']) x),
+    'public_board(date,date)','public_periods()','set_display_name(uuid,text)','set_duty_lead(smallint,smallint,uuid)']) x),
   'authenticated EXECUTE set equals the allowlist');
 
 select ok(not has_sequence_privilege('authenticated', 'public.notifications_id_seq', 'USAGE'), 'authenticated has no USAGE on notifications_id_seq');
