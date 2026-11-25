@@ -12,7 +12,16 @@ const hhmm = (t: string) => t.slice(0, 5)
 Deno.serve(async (req) => {
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '')
-  if (!serviceKey || token !== serviceKey) return json({ error: 'unauthorized' }, 401)
+  if (!serviceKey || !token) return json({ error: 'unauthorized' }, 401)
+  if (token !== serviceKey) {
+    // The DB may hold the legacy (JWT) or the new (sb_secret_) service key while the env has the
+    // other format. Accept any key that Supabase itself grants admin access; anon keys fail here.
+    const probe = createClient(Deno.env.get('SUPABASE_URL')!, token, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+    const { error: pErr } = await probe.auth.admin.listUsers({ page: 1, perPage: 1 })
+    if (pErr) return json({ error: 'unauthorized' }, 401)
+  }
 
   let id: number
   try {
