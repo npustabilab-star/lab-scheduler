@@ -76,7 +76,7 @@ export default function CalendarPage() {
 
   return (
     <div className="p-2">
-      <h1 className="mb-2 text-xl font-bold">行事曆</h1>
+      <h1 className="mb-2 text-2xl font-bold sm:text-3xl">行事曆</h1>
       {error && (
         <p role="alert" className="mb-2 rounded bg-red-100 p-2 text-sm text-red-700">
           {error}
@@ -100,7 +100,7 @@ export default function CalendarPage() {
               const c = cells.get(cellKey(days[w - 1], p))
               if (!c) return null
               return (
-                <div className="space-y-0.5 py-0.5 text-xs leading-tight">
+                <div className="space-y-1 py-1 text-sm leading-snug sm:text-base">
                   {c.names.length > 0 && <div>{c.names.join('、')}</div>}
                   {c.meetings.map((m) => (
                     <div key={m} className="rounded bg-blue-100 px-1 text-blue-800">
