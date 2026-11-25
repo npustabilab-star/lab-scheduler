@@ -40,7 +40,7 @@
    npx supabase db push --remote
    ```
    - **一定要加 `--remote`**：這個版本的 CLI 在沒有 `--remote` 時會把 migration 推到本機（Docker）資料庫，而不是雲端。
-   - 檢查雲端已套用哪些 migration：`npx supabase migration list --remote`，每個 migration 的「Remote」欄都要有值（包含 `20261125000011`，API 權限 GRANT）。
+   - 檢查雲端已套用哪些 migration：`npx supabase migration list --remote`，每個 migration 的「Remote」欄都要有值，而且最新的那個 migration（`20261125000015`，每週時段可指定日期）也已套用。要確認雲端已是最新，看 `migration list --remote` 最後一列是不是 `20261125000015` 且 Remote 欄有值；中間的 `20261125000011`（API 權限 GRANT）、`000012`–`000014`（單日調整、七節＋午休）也都要有值。
    - **規則**：新增資料表或函式時，必須在 migration 裡明確 GRANT（雲端預設不給任何權限）。本機已與雲端一致（default privileges 已撤銷），漏寫 GRANT 時 `npx supabase test db` 會失敗。
 3. Realtime：migration `20261124000008_realtime.sql` 會把前端訂閱的資料表（weekly_slots、slot_exceptions、bookings、no_class_days、notifications、profiles、semesters、periods）加入 `supabase_realtime` publication，不需要另外手動設定。推送後請到 Dashboard → Database → Publications，確認 `supabase_realtime` 列出這 8 張表；若沒有，畫面不會即時更新（需要重新整理才看得到變動）。
 4. 在 Dashboard 的 SQL Editor 設定 vault 密碼（寄信的資料庫 trigger 會用到）：
@@ -70,6 +70,7 @@ npx supabase functions deploy notify-email --project-ref muehypeofgmbqhsvuccd
 npx supabase functions deploy admin-members --project-ref muehypeofgmbqhsvuccd
 ```
 
+- **`notify-email` 的程式碼有改動時（例如信件內容、節次標籤），一定要重新部署**（資料庫 migration 不會更新 Edge Function）：`npx supabase functions deploy notify-email --project-ref muehypeofgmbqhsvuccd`。
 - `GMAIL_USER`、`GMAIL_APP_PASSWORD`、`APP_URL` 是 `notify-email` 讀取的環境變數；`admin-members` 只使用 Supabase 自動提供的 `SUPABASE_URL`、`SUPABASE_SERVICE_ROLE_KEY`，不需要額外設定。
 
 ### 升級既有雲端專案
@@ -146,10 +147,11 @@ git push
    - 測試專題生：學號例如 `test0002`、身分「專題生」，指導研究生選剛剛的測試研究生。
    - Email 為選填；要驗證測試帳號收信的話，填一個你收得到信的信箱。
 3. **首次登入改密碼**：分別用兩個測試帳號登入（帳號＝學號，初始密碼＝學號後四碼，例如 `0001`、`0002`），系統會要求設定新密碼，完成後才能進入網站。
-4. **設定時段**（兩者必須是同一個星期與同一節）：
-   - 老師到「我的可約時段」勾選一格，例如週三第 3 節。
-   - 測試研究生到「我的值班時段」勾選相同的格子（週三第 3 節）。
-5. **預約**：用測試專題生登入，到預約頁選一個「至少 7 天後」且落在測試學期內的週三第 3 節日期，送出預約。
+4. **設定時段**（兩者必須是同一個星期與同一節；時段格子是「週視圖」，只能設定今天以後、學期內、非停課的日子）：
+   - 老師到「我的值班」頁（老師看到的標題是「我的可約時段」），點一格，例如測試學期內某週的週三第 3 節，在跳出的視窗按「每週這節都可以」。
+   - 測試研究生到「我的值班」頁，點相同的格子（週三第 3 節），同樣按「每週這節都可以」。
+   - 可順便試「只有這週不行」／「恢復成每週固定」：格子會顯示「本週調整」。午休（午休 13:00–13:20，節次 8）也是可預約的時段，排在第 4 節與第 5 節之間。
+5. **預約**：用測試專題生登入，到「預約」頁選一個「至少 7 天後」且落在測試學期內的週三第 3 節日期，送出預約。
 6. **確認通知**：老師要收到「待你確認」的 Email（若沒收到，到 Edge Functions → `notify-email` → Logs 查錯），且網站的站內通知鈴鐺有對應通知。
 7. **清理**（到 SQL Editor 執行；學號請替換成你實際使用的測試學號）：
    ```sql
@@ -182,6 +184,8 @@ git push
 
 1. 在「管理」→「學期」新增學期，並設為目前學期。學期的日期區間不可和其他學期重疊（資料庫以 `semesters_no_overlap` 限制，重疊時畫面會提示「學期日期與現有學期重疊」）。
 2. 提醒所有人到「我的值班」重新填寫每週格子（新學期不會沿用舊的格子）。
+   - 「行事曆」頁是唯讀的週課表，只用來查看每週誰在、哪些時段已被預約；要改時段請到「我的值班」。
+   - 一天共有 7 節課加上午休（節次 8，13:00–13:20，可預約），所有時間都用 24 小時制；午休的顯示名稱存在 `periods.label`。
 3. 到「停課日」補上該學期的停課日，必要時在「節次時間」調整節次。
 
 ### 修改或刪除學期日期
