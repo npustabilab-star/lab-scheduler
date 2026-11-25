@@ -127,3 +127,7 @@ export const setDisplayName = (userId: string, name: string) =>
 /** Teacher only: who leads a weekly slot with several grads (null clears). */
 export const setDutyLead = (weekday: number, period: number, userId: string | null) =>
   call(supabase.rpc('set_duty_lead', { p_weekday: weekday, p_period: period, p_user: userId as string }))
+
+/** Public (no login): semester name covering a date, or null. */
+export const publicSemester = (date: string): Promise<string | null> =>
+  call(supabase.rpc('public_semester', { p_date: date })) as Promise<string | null>

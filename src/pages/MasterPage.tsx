@@ -22,6 +22,7 @@ export default function MasterPage() {
   const [leads, setLeads] = useState<Map<string, string>>(new Map())
   const [periods, setPeriods] = useState<PeriodInfo[]>([])
   const [labels, setLabels] = useState<Record<number, string>>({})
+  const [semesterName, setSemesterName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<{ w: number; p: number } | null>(null)
 
@@ -30,7 +31,8 @@ export default function MasterPage() {
   const load = useCallback(async () => {
     const isCurrent = beginLoad()
     try {
-      const { semesterId, periods, labels } = await loadSemesterAndPeriods()
+      const { semesterId, semesterName, periods, labels } = await loadSemesterAndPeriods()
+      setSemesterName(semesterName ?? '')
       if (!isCurrent()) return
       if (!semesterId) {
         setHasSemester(false)
@@ -107,7 +109,7 @@ export default function MasterPage() {
     : []
   return (
     <div className="p-2">
-      <h1 className="mb-2 text-xl font-bold">總表</h1>
+      <h1 className="mb-2 text-xl font-bold">{semesterName ? `${semesterName} 總表` : '總表'}</h1>
       {error && (
         <p role="alert" className="mb-2 rounded bg-red-100 p-2 text-sm text-red-700">
           {error}

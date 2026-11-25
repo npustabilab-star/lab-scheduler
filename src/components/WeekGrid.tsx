@@ -32,15 +32,15 @@ export default function WeekGrid({
   periods = DEFAULT_PERIODS,
 }: Props) {
   return (
-    <table className="w-full table-fixed border-collapse text-center text-sm">
+    <table className="w-full table-fixed border-separate border-spacing-0 overflow-hidden rounded-xl border border-indigo-100 text-center text-sm">
       <thead>
         <tr>
-          <th className="w-10 sm:w-24" />
+          <th className="w-10 bg-indigo-600 sm:w-24" />
           {WEEKDAYS.map((w) => (
-            <th key={w} className="p-1 font-medium">
+            <th key={w} className="bg-indigo-600 p-1.5 font-medium text-white">
               {WEEKDAY_LABELS[w - 1]}
-              {days && <span className="block text-xs font-normal text-gray-600">{shortDate(days[w - 1])}</span>}
-              {dayNotes?.[w] && <span className="block text-xs font-normal text-gray-600">{dayNotes[w]}</span>}
+              {days && <span className="block text-xs font-normal text-indigo-100">{shortDate(days[w - 1])}</span>}
+              {dayNotes?.[w] && <span className="block text-xs font-normal text-amber-200">{dayNotes[w]}</span>}
             </th>
           ))}
         </tr>
@@ -50,11 +50,11 @@ export default function WeekGrid({
           const p = info.period
           return (
             <tr key={p} data-row={p}>
-              <th scope="row" className="p-1 text-xs font-normal text-gray-600">
+              <th scope="row" className={`border-t border-indigo-100 p-1 text-xs font-medium ${info.label === '午休' ? 'bg-amber-50 text-amber-700' : 'bg-indigo-50 text-indigo-700'}`}>
                 <span className="sm:hidden">{info.label.replace(/[第節]/g, '')}</span>
                 <span className="hidden sm:inline">{info.label}</span>
                 {info.start && info.end && (
-                  <span className="hidden sm:block">
+                  <span className="hidden font-normal text-slate-500 sm:block">
                     {formatHM(info.start)}–{formatHM(info.end)}
                   </span>
                 )}
@@ -87,9 +87,17 @@ export default function WeekGrid({
                         : undefined
                     }
                     className={[
-                      'h-9 border border-gray-200 align-middle',
-                      clickable ? 'cursor-pointer' : '',
-                      uncovered ? 'bg-red-100' : disabled ? 'bg-gray-200 text-gray-500' : on ? 'bg-green-200' : 'bg-white',
+                      'h-10 border-t border-l border-indigo-100 align-middle transition-colors',
+                      clickable ? 'cursor-pointer hover:bg-indigo-50' : '',
+                      uncovered
+                        ? 'bg-rose-100'
+                        : disabled
+                          ? 'bg-slate-100 text-slate-400'
+                          : on
+                            ? 'bg-emerald-100 font-semibold text-emerald-800 hover:bg-emerald-200'
+                            : info.label === '午休'
+                              ? 'bg-amber-50/60'
+                              : 'bg-white',
                     ].join(' ')}
                   >
                     {cells(w, p)}

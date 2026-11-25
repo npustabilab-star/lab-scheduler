@@ -65,7 +65,7 @@ select is((select coalesce(array_agg(replace(p.oid::regprocedure::text, ', ', ',
     and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')
     and (has_function_privilege('anon', p.oid, 'EXECUTE')
          or exists (select 1 from aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a where a.grantee = 0 and a.privilege_type = 'EXECUTE'))),
-  array['public_board(date,date)','public_periods()'], 'only the public board functions are executable by anon or PUBLIC');
+  array['public_board(date,date)','public_periods()','public_semester(date)'], 'only the public board functions are executable by anon or PUBLIC');
 
 select is((select coalesce(array_agg(replace(p.oid::regprocedure::text, ', ', ',') order by replace(p.oid::regprocedure::text, ', ', ',')), '{}') from pg_proc p
   where p.pronamespace = 'public'::regnamespace
@@ -80,7 +80,7 @@ select is((select coalesce(array_agg(replace(p.oid::regprocedure::text, ', ', ',
     'set_account_status(uuid,account_status,boolean)','set_admin(uuid,boolean)','mark_notifications_read(bigint[])',
     'password_changed()','set_notify_email(uuid,text)',
     'set_day_slot(date,smallint,boolean,boolean)','clear_day_slot(date,smallint,boolean)',
-    'public_board(date,date)','public_periods()','set_display_name(uuid,text)','set_duty_lead(smallint,smallint,uuid)']) x),
+    'public_board(date,date)','public_periods()','set_display_name(uuid,text)','set_duty_lead(smallint,smallint,uuid)','public_semester(date)']) x),
   'authenticated EXECUTE set equals the allowlist');
 
 select ok(not has_sequence_privilege('authenticated', 'public.notifications_id_seq', 'USAGE'), 'authenticated has no USAGE on notifications_id_seq');

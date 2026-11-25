@@ -5,6 +5,7 @@ export type PeriodTimes = Record<number, { start: string; end: string }>
 
 type Loaded = {
   semesterId: number | null
+  semesterName: string | null
   semester: { start_date: string; end_date: string } | null
   times: PeriodTimes
   /** Rows ordered by start time (e.g. 1,2,3,4,8,5,6,7), each with its display label. */
@@ -31,5 +32,5 @@ export async function loadSemesterAndPeriods(): Promise<Loaded> {
   const times: PeriodTimes = Object.fromEntries(periods.map((p) => [p.period, { start: p.start, end: p.end }]))
   const labels = Object.fromEntries(periods.map((p) => [p.period, p.label]))
   const semester = sem.data ? { start_date: sem.data.start_date, end_date: sem.data.end_date } : null
-  return { semesterId: sem.data?.id ?? null, semester, times, periods, labels }
+  return { semesterId: sem.data?.id ?? null, semesterName: sem.data?.name ?? null, semester, times, periods, labels }
 }

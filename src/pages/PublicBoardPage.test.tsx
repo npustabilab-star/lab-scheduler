@@ -5,9 +5,10 @@ import { describe, expect, it, vi } from 'vitest'
 const h = vi.hoisted(() => ({
   publicBoard: vi.fn(),
   publicPeriods: vi.fn(),
+  publicSemester: vi.fn(async () => '115-1'),
   auth: { session: null as unknown, profile: null as unknown },
 }))
-vi.mock('../lib/api', () => ({ publicBoard: h.publicBoard, publicPeriods: h.publicPeriods }))
+vi.mock('../lib/api', () => ({ publicBoard: h.publicBoard, publicPeriods: h.publicPeriods, publicSemester: h.publicSemester }))
 vi.mock('../auth/AuthProvider', () => ({ useAuth: () => h.auth }))
 vi.mock('../lib/week', async (orig) => ({ ...(await orig<typeof import('../lib/week')>()), taipeiToday: () => '2026-11-25' }))
 
@@ -30,6 +31,7 @@ describe('PublicBoardPage', () => {
       </MemoryRouter>,
     )
     expect(await screen.findByText('小明、小華')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '115-1 總表' })).toBeInTheDocument()
     expect(screen.getByText('徐明龍老師')).toBeInTheDocument()
     expect(h.publicBoard).toHaveBeenCalledWith('2026-11-23', '2026-11-27')
     expect(screen.getAllByText('午休').length).toBeGreaterThan(0)

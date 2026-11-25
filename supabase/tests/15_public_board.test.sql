@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(15);
 
 set local app.now = '2026-03-02 09:00';
 
@@ -23,6 +23,8 @@ select is((select date::text || '/' || period || '/' || display_name from public
 select is((select count(*)::int from public_board('2026-03-02', '2026-04-30')), 0, 'ranges over two weeks return nothing');
 select is((select count(*)::int from public_board('2026-03-06', '2026-03-02')), 0, 'reversed range returns nothing');
 select is((select count(*)::int from public_periods()), 8, 'anon sees all 8 periods');
+select is(public_semester('2026-03-02'), 'S', 'anon sees the semester name for a date');
+select is(public_semester('2025-01-01'), null, 'no semester outside any term');
 select throws_ok($$select * from profiles$$, '42501', null, 'anon still cannot read profiles');
 reset role;
 

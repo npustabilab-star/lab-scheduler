@@ -324,6 +324,9 @@ isOneToOne: false
               "end_time": string,"label": string,"period": number,"start_time": string
             }[]
                            },
+"public_semester":
+{ Args: { "p_date": string }; Returns: string
+                           },
 "remove_exception":
 { Args: { "p_date": string,"p_period": number }; Returns: undefined
                            },
