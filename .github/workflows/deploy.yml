@@ -39,7 +39,8 @@ jobs:
         run: npx supabase link --project-ref "$PROJECT_REF"
 
       - name: 推送資料庫更新
-        run: npx supabase db push --remote --password "$SUPABASE_DB_PASSWORD" --yes
+        # 不帶 --password：讓 CLI 用 access token 走 Supabase 的登入通道（GitHub runner 連不到資料庫的 IPv6 直連位址）
+        run: npx supabase db push --remote --yes
 
       - name: 部署後台函式
         run: |
