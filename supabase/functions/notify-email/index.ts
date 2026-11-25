@@ -59,7 +59,11 @@ async function handle(req: Request): Promise<Response> {
       console.error('send failed:', reason)
       return json({ error: 'send failed', reason }, 502)
     } finally {
-      await smtp.close().catch(() => {})
+      try {
+        await smtp.close()
+      } catch {
+        // closing can fail after a send error; nothing to do
+      }
     }
     return null
   }
