@@ -89,8 +89,16 @@ export default function AdminPage() {
   }
 
   const grads = useMemo(() => profiles.filter((p) => p.role === 'grad' && p.status === 'active'), [profiles])
-  const waiting = profiles.filter((p) => p.status === 'pending')
   const members = profiles.filter((p) => p.status !== 'pending')
+
+  const createMember = async (input: api.CreateInput) => {
+    let ok = false
+    await act(async () => {
+      await api.createMember(input)
+      ok = true
+    })
+    return ok
+  }
 
   if (!loaded) return <p className="p-4">載入中…</p>
   return (
@@ -111,17 +119,7 @@ export default function AdminPage() {
 
       {tab === '成員' && (
         <div className="space-y-4">
-          <section>
-            <h2 className="mb-1 font-bold">待審核</h2>
-            {waiting.length === 0 && <p className="text-sm text-gray-500">沒有待審核的使用者</p>}
-            <ul className="space-y-2">
-              {waiting.map((p) => (
-                <ApproveRow key={p.id} profile={p} grads={grads}
-                  onError={setActionError}
-                  onApprove={(role, mentor) => void act(() => api.approveUser(p.id, role, mentor))} />
-              ))}
-            </ul>
-          </section>
+          <AddMemberForm grads={grads} onError={setActionError} onCreate={createMember} />
           <section>
             <h2 className="mb-1 font-bold">成員</h2>
             <ul className="space-y-2">
@@ -133,7 +131,7 @@ export default function AdminPage() {
                     {p.is_admin && <span className="ml-2 rounded bg-yellow-100 px-1">管理者</span>}
                     {p.status === 'disabled' && <span className="ml-2 rounded bg-gray-200 px-1">已停用</span>}
                   </div>
-                  <div className="break-all text-gray-500">{p.email}</div>
+                  <div className="text-gray-500">學號：{p.student_id ?? '—'}</div>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     {p.role === 'undergrad' && (
                       <select aria-label={`${p.display_name}的指導研究生`} className={input} value={p.mentor_id ?? ''}
@@ -157,7 +155,15 @@ export default function AdminPage() {
                     <button type="button" className={btn} onClick={() => void act(() => api.setAdmin(p.id, !p.is_admin))}>
                       {p.is_admin ? '取消管理者' : '設為管理者'}
                     </button>
+                    <button type="button" className={btn}
+                      onClick={() => {
+                        if (window.confirm(`確定要把 ${p.display_name} 的密碼重設為學號後四碼？`))
+                          void act(() => api.resetMemberPassword(p.id))
+                      }}>
+                      重設密碼
+                    </button>
                   </div>
+                  <NotifyEmail profile={p} onSave={(email) => void act(() => api.setNotifyEmail(p.id, email))} />
                 </li>
               ))}
             </ul>
@@ -211,44 +217,78 @@ export default function AdminPage() {
   )
 }
 
-function ApproveRow({ profile, grads, onApprove, onError }: {
-  profile: Profile
+function AddMemberForm({ grads, onCreate, onError }: {
   grads: Profile[]
-  onApprove: (role: Role, mentor?: string) => void
+  onCreate: (input: api.CreateInput) => Promise<boolean>
   onError: (m: string | null) => void
 }) {
-  const [role, setRole] = useState<Role | ''>('')
+  const [studentId, setStudentId] = useState('')
+  const [name, setName] = useState('')
+  const [role, setRole] = useState<Role>('undergrad')
   const [mentor, setMentor] = useState('')
-  const submit = () => {
-    if (!role) return onError('請選擇角色')
+  const [email, setEmail] = useState('')
+  const submit = async () => {
     if (role === 'undergrad' && !mentor) return onError('請選擇指導研究生')
+    if (role === 'teacher' && !email.trim()) return onError('老師必須填寫 Email')
     onError(null)
-    onApprove(role, role === 'undergrad' ? mentor : undefined)
+    const ok = await onCreate({
+      student_id: studentId.trim(),
+      display_name: name.trim(),
+      role,
+      mentor_id: role === 'undergrad' ? mentor : null,
+      notify_email: email.trim() || null,
+    })
+    if (ok) {
+      setStudentId(''); setName(''); setMentor(''); setEmail('')
+    }
   }
   return (
-    <li className="rounded border p-2 text-sm">
-      <div className="font-medium">{profile.display_name}</div>
-      <div className="mb-1 break-all text-gray-500">{profile.email}</div>
-      <div className="flex flex-wrap items-center gap-2">
-        <label className="flex items-center gap-1">角色
-          <select className={input} value={role} onChange={(e) => setRole(e.target.value as Role | '')}>
-            <option value="">請選擇</option>
-            <option value="undergrad">專題生</option>
+    <section>
+      <h2 className="mb-1 font-bold">新增成員</h2>
+      <form className="flex flex-wrap items-end gap-2 text-sm"
+        onSubmit={(e) => {
+          e.preventDefault()
+          void submit()
+        }}>
+        <label>學號<input className={`${input} block`} value={studentId} required onChange={(e) => setStudentId(e.target.value)} /></label>
+        <label>姓名<input className={`${input} block`} value={name} required onChange={(e) => setName(e.target.value)} /></label>
+        <label>身分
+          <select className={`${input} block`} value={role} onChange={(e) => setRole(e.target.value as Role)}>
             <option value="grad">研究生</option>
+            <option value="undergrad">專題生</option>
             <option value="teacher">老師</option>
           </select>
         </label>
         {role === 'undergrad' && (
-          <label className="flex items-center gap-1">指導研究生
-            <select className={input} value={mentor} onChange={(e) => setMentor(e.target.value)}>
+          <label>指導研究生
+            <select className={`${input} block`} value={mentor} onChange={(e) => setMentor(e.target.value)}>
               <option value="">請選擇</option>
               {grads.map((g) => <option key={g.id} value={g.id}>{g.display_name}</option>)}
             </select>
           </label>
         )}
-        <button type="button" className={`${btn} bg-blue-600 text-white`} onClick={submit}>核准</button>
-      </div>
-    </li>
+        <label>Email{role === 'teacher' ? '' : '（選填）'}
+          <input type="email" className={`${input} block`} value={email} onChange={(e) => setEmail(e.target.value)} />
+        </label>
+        <button type="submit" className={`${btn} bg-blue-600 text-white`}>新增成員</button>
+      </form>
+      <p className="mt-1 text-xs text-gray-500">初始密碼為學號後四碼，第一次登入需更改密碼。</p>
+    </section>
+  )
+}
+
+function NotifyEmail({ profile, onSave }: { profile: Profile; onSave: (email: string) => void }) {
+  const [email, setEmail] = useState(profile.notify_email ?? '')
+  return (
+    <form className="mt-1 flex flex-wrap items-center gap-2"
+      onSubmit={(e) => {
+        e.preventDefault()
+        onSave(email.trim())
+      }}>
+      <input type="email" aria-label={`${profile.display_name}的通知 Email`} className={input} value={email}
+        placeholder="通知 Email" onChange={(e) => setEmail(e.target.value)} />
+      <button type="submit" className={btn}>儲存 Email</button>
+    </form>
   )
 }
 

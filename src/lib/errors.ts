@@ -14,6 +14,9 @@ const MESSAGES: Record<string, string> = {
   NOT_PENDING: '這筆預約已經不是待確認狀態',
   TEACHER_EXISTS: '系統中已經有一位老師',
   NOT_UNDERGRAD: '只有專題生可以預約',
+  STUDENT_ID_EXISTS: '這個學號已經在名單中',
+  EMAIL_REQUIRED: '老師必須填寫 Email',
+  INVALID_STUDENT_ID: '學號至少 4 碼',
 }
 
 export const DEFAULT_ERROR_MESSAGE = '發生錯誤，請稍後再試'

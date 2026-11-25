@@ -8,7 +8,10 @@ const h = vi.hoisted(() => ({
   createBooking: vi.fn(),
   respondBooking: vi.fn(),
   cancelBooking: vi.fn(),
-  auth: { profile: { id: 'me', role: 'teacher' } },
+  auth: { profile: { id: 'me', role: 'teacher' }, refresh: vi.fn() },
+  signIn: vi.fn(),
+  updateUser: vi.fn(),
+  rpc: vi.fn(),
 }))
 
 vi.mock('../lib/api', async () => {
@@ -27,7 +30,16 @@ vi.mock('../lib/supabase', () => {
   const chain = () => q
   for (const m of ['select', 'eq', 'in', 'or', 'order']) q[m] = chain
   q.then = (res: (v: unknown) => unknown) => res({ data: h.bookings, error: null })
-  return { supabase: { from: () => q } }
+  return {
+    supabase: {
+      from: () => q,
+      rpc: (...a: unknown[]) => h.rpc(...a),
+      auth: {
+        signInWithPassword: (...a: unknown[]) => h.signIn(...a),
+        updateUser: (...a: unknown[]) => h.updateUser(...a),
+      },
+    },
+  }
 })
 vi.mock('../lib/semester', () => ({
   loadSemesterAndPeriods: async () => ({ semesterId: 1, times: { 3: { start: '10:10', end: '11:00' } } }),
@@ -37,6 +49,8 @@ vi.mock('../auth/AuthProvider', () => ({ useAuth: () => h.auth }))
 
 import { AppError } from '../lib/api'
 import BookingPage from './BookingPage'
+import ChangePasswordPage from './ChangePasswordPage'
+import LoginPage from './LoginPage'
 import RequestsPage from './RequestsPage'
 
 beforeEach(() => {
@@ -96,5 +110,58 @@ describe('RequestsPage', () => {
     expect(screen.getByText('沒有待確認的預約')).toBeTruthy()
     expect(screen.queryByRole('button', { name: '同意' })).toBeNull()
     expect(screen.getByRole('button', { name: '取消' })).toBeTruthy()
+  })
+})
+
+describe('LoginPage', () => {
+  it('shows a generic error when sign-in fails', async () => {
+    h.signIn.mockResolvedValue({ error: { message: 'Invalid login credentials' } })
+    const user = userEvent.setup()
+    render(<LoginPage />)
+    await user.type(screen.getByLabelText('學號'), 'B11234567')
+    await user.type(screen.getByLabelText('密碼'), '4567')
+    await user.click(screen.getByRole('button', { name: '登入' }))
+    expect(await screen.findByText('學號或密碼錯誤')).toBeTruthy()
+    expect(h.signIn).toHaveBeenCalledWith({
+      email: 'b11234567@users.lab-scheduler.internal',
+      password: 'lab-scheduler:4567',
+    })
+  })
+})
+
+describe('ChangePasswordPage', () => {
+  it('rejects mismatching passwords without calling updateUser', async () => {
+    const user = userEvent.setup()
+    render(<ChangePasswordPage />)
+    await user.type(screen.getByLabelText('新密碼'), 'abcdefgh')
+    await user.type(screen.getByLabelText('確認新密碼'), 'abcdefgx')
+    await user.click(screen.getByRole('button', { name: '更改密碼' }))
+    expect((await screen.findByRole('alert')).textContent).toContain('兩次輸入的密碼不一致')
+    expect(h.updateUser).not.toHaveBeenCalled()
+    expect(h.rpc).not.toHaveBeenCalled()
+  })
+
+  it('updates the password, then marks it changed and refreshes', async () => {
+    h.updateUser.mockResolvedValue({ error: null })
+    h.rpc.mockResolvedValue({ error: null })
+    const user = userEvent.setup()
+    render(<ChangePasswordPage />)
+    await user.type(screen.getByLabelText('新密碼'), 'abcdefgh')
+    await user.type(screen.getByLabelText('確認新密碼'), 'abcdefgh')
+    await user.click(screen.getByRole('button', { name: '更改密碼' }))
+    await waitFor(() => expect(h.auth.refresh).toHaveBeenCalled())
+    expect(h.updateUser).toHaveBeenCalledWith({ password: 'lab-scheduler:abcdefgh' })
+    expect(h.rpc).toHaveBeenCalledWith('password_changed')
+  })
+
+  it('does not call password_changed when updateUser fails', async () => {
+    h.updateUser.mockResolvedValue({ error: { message: 'weak' } })
+    const user = userEvent.setup()
+    render(<ChangePasswordPage />)
+    await user.type(screen.getByLabelText('新密碼'), 'abcdefgh')
+    await user.type(screen.getByLabelText('確認新密碼'), 'abcdefgh')
+    await user.click(screen.getByRole('button', { name: '更改密碼' }))
+    expect((await screen.findByRole('alert')).textContent).toContain('密碼更新失敗，請再試一次')
+    expect(h.rpc).not.toHaveBeenCalled()
   })
 })

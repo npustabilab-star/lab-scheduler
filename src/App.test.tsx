@@ -3,7 +3,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import type { Profile } from './lib/supabase'
 
-const profile: Profile = {
+let profile: Profile = {
   id: 'u1',
   email: 'a@b.c',
   display_name: 'A',
@@ -11,6 +11,9 @@ const profile: Profile = {
   status: 'active',
   is_admin: false,
   mentor_id: null,
+  student_id: 'b1234',
+  notify_email: null,
+  must_change_password: false,
   created_at: '2026-01-01T00:00:00Z',
 }
 
@@ -20,6 +23,12 @@ vi.mock('./auth/AuthProvider', () => ({
 }))
 
 import { AppRoutes } from './App'
+import { beforeEach } from 'vitest'
+
+const base = profile
+beforeEach(() => {
+  profile = base
+})
 
 describe('active user without a role', () => {
   for (const path of ['/pending', '/calendar']) {
@@ -30,6 +39,20 @@ describe('active user without a role', () => {
         </MemoryRouter>,
       )
       expect(screen.getByText('尚未指派身分，請聯絡管理者')).toBeInTheDocument()
+    })
+  }
+})
+
+describe('must change password', () => {
+  for (const path of ['/change-password', '/calendar', '/pending', '/login']) {
+    it(`only ever lands on /change-password (from ${path})`, () => {
+      profile = { ...base, role: 'grad', must_change_password: true }
+      render(
+        <MemoryRouter initialEntries={[path]}>
+          <AppRoutes />
+        </MemoryRouter>,
+      )
+      expect(screen.getByText('請設定新密碼')).toBeInTheDocument()
     })
   }
 })

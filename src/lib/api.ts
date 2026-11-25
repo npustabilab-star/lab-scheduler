@@ -1,12 +1,13 @@
-import { rpcErrorMessage } from './errors'
+import { DEFAULT_ERROR_MESSAGE, rpcErrorMessage } from './errors'
 import { supabase } from './supabase'
 import type { ChangeResult } from './supabase'
 import type { Database } from './database.types'
+import type { CreateInput } from '../../supabase/functions/admin-members/logic.ts'
 
 export class AppError extends Error {
   code: string
-  constructor(code: string) {
-    super(rpcErrorMessage(code))
+  constructor(code: string, message?: string) {
+    super(message ?? rpcErrorMessage(code))
     this.name = 'AppError'
     this.code = code
   }
@@ -47,15 +48,6 @@ export const setAccountStatus = (
   confirm: boolean,
 ) => change(supabase.rpc('set_account_status', { p_user: user, p_status: status, p_confirm: confirm }))
 
-export const approveUser = (
-  user: string,
-  role: Database['public']['Enums']['user_role'],
-  mentor?: string | null,
-) =>
-  call(supabase.rpc('approve_user', { p_user: user, p_role: role, p_mentor: mentor ?? undefined })).then(
-    () => undefined,
-  )
-
 export const setAdmin = (user: string, isAdmin: boolean) =>
   call(supabase.rpc('set_admin', { p_user: user, p_is_admin: isAdmin })).then(() => undefined)
 
@@ -81,3 +73,30 @@ export const uncoveredDays = (from: string, to: string): Promise<string[]> =>
 
 export const markNotificationsRead = (ids?: number[]) =>
   call(supabase.rpc('mark_notifications_read', { p_ids: ids })).then(() => undefined)
+
+export type { CreateInput }
+
+/** Calls the admin-members Edge Function; a non-2xx reply carries the Chinese message in its JSON body. */
+async function adminMembers(body: Record<string, unknown>): Promise<void> {
+  const { data, error } = await supabase.functions.invoke('admin-members', { body })
+  if (error) {
+    let message = DEFAULT_ERROR_MESSAGE
+    try {
+      const j = await (error as { context?: Response }).context?.json()
+      if (j && typeof j.message === 'string' && j.message) message = j.message
+    } catch {
+      // body was not JSON: keep the default message
+    }
+    throw new AppError('ADMIN_MEMBERS', message)
+  }
+  if (data && (data as { ok?: boolean }).ok === false) {
+    throw new AppError('ADMIN_MEMBERS', (data as { message?: string }).message || DEFAULT_ERROR_MESSAGE)
+  }
+}
+
+export const createMember = (input: CreateInput) => adminMembers({ action: 'create', ...input })
+
+export const resetMemberPassword = (userId: string) => adminMembers({ action: 'reset_password', user_id: userId })
+
+export const setNotifyEmail = (userId: string, email: string) =>
+  call(supabase.rpc('set_notify_email', { p_user: userId, p_email: email })).then(() => undefined)

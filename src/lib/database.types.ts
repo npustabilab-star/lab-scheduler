@@ -117,14 +117,14 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "created_at": string,"display_name": string,"email": string,"id": string,"is_admin": boolean,"mentor_id": string | null,"role": Database["public"]['Enums']["user_role"] | null,"status": Database["public"]['Enums']["account_status"]
+                    "created_at": string,"display_name": string,"email": string,"id": string,"is_admin": boolean,"mentor_id": string | null,"must_change_password": boolean,"notify_email": string | null,"role": Database["public"]['Enums']["user_role"] | null,"status": Database["public"]['Enums']["account_status"],"student_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"display_name": string,"email": string,"id": string,"is_admin"?: boolean,"mentor_id"?: string | null,"role"?: Database["public"]['Enums']["user_role"] | null,"status"?: Database["public"]['Enums']["account_status"]
+                    "created_at"?: string,"display_name": string,"email": string,"id": string,"is_admin"?: boolean,"mentor_id"?: string | null,"must_change_password"?: boolean,"notify_email"?: string | null,"role"?: Database["public"]['Enums']["user_role"] | null,"status"?: Database["public"]['Enums']["account_status"],"student_id"?: string | null
                   }
                   Update: {
-                    "created_at"?: string,"display_name"?: string,"email"?: string,"id"?: string,"is_admin"?: boolean,"mentor_id"?: string | null,"role"?: Database["public"]['Enums']["user_role"] | null,"status"?: Database["public"]['Enums']["account_status"]
+                    "created_at"?: string,"display_name"?: string,"email"?: string,"id"?: string,"is_admin"?: boolean,"mentor_id"?: string | null,"must_change_password"?: boolean,"notify_email"?: string | null,"role"?: Database["public"]['Enums']["user_role"] | null,"status"?: Database["public"]['Enums']["account_status"],"student_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -207,6 +207,12 @@ isOneToOne: false
 "add_no_class_day":
 { Args: { "p_confirm"?: boolean,"p_date": string,"p_note": string }; Returns: Json
                            },
+"admin_reset_flag":
+{ Args: { "p_user": string }; Returns: undefined
+                           },
+"admin_setup_member":
+{ Args: { "p_display_name": string,"p_is_admin": boolean,"p_mentor": string,"p_notify_email": string,"p_role": Database["public"]['Enums']["user_role"],"p_student_id": string,"p_user": string }; Returns: undefined
+                           },
 "approve_user":
 { Args: { "p_mentor"?: string,"p_role": Database["public"]['Enums']["user_role"],"p_user": string }; Returns: undefined
                            },
@@ -265,6 +271,9 @@ isOneToOne: false
 "mark_notifications_read":
 { Args: { "p_ids"?: (number)[] }; Returns: undefined
                            },
+"password_changed":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
 "remove_exception":
 { Args: { "p_date": string,"p_period": number }; Returns: undefined
                            },
@@ -287,6 +296,9 @@ isOneToOne: false
                            },
 "set_mentor":
 { Args: { "p_confirm"?: boolean,"p_grad": string,"p_undergrad": string }; Returns: Json
+                           },
+"set_notify_email":
+{ Args: { "p_email": string,"p_user": string }; Returns: undefined
                            },
 "set_weekly_slot":
 { Args: { "p_confirm"?: boolean,"p_on": boolean,"p_period": number,"p_weekday": number }; Returns: Json

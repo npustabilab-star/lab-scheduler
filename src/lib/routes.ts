@@ -16,6 +16,7 @@ export function routesFor(p: Profile | null): RouteKey[] {
 export function homeFor(p: Profile | null): string {
   if (!p) return '/login'
   if (p.status !== 'active') return '/pending'
+  if (p.must_change_password) return '/change-password'
   const first = routesFor(p)[0]
   return first ? '/' + first : '/pending'
 }

@@ -10,6 +10,9 @@ const base: Profile = {
   status: 'active',
   is_admin: false,
   mentor_id: null,
+  student_id: 'b1234',
+  notify_email: null,
+  must_change_password: false,
   created_at: '2026-01-01T00:00:00Z',
 }
 const p = (o: Partial<Profile>): Profile => ({ ...base, ...o })
@@ -38,6 +41,8 @@ describe('homeFor', () => {
   it('disabled -> /pending', () => expect(homeFor(p({ status: 'disabled' }))).toBe('/pending'))
   it('active without role -> /pending', () =>
     expect(homeFor(p({ status: 'active', role: null }))).toBe('/pending'))
+  it('active must-change -> /change-password', () =>
+    expect(homeFor(p({ must_change_password: true }))).toBe('/change-password'))
   it('grad -> /calendar', () => expect(homeFor(p({}))).toBe('/calendar'))
   it('undergrad -> /booking', () => expect(homeFor(p({ role: 'undergrad' }))).toBe('/booking'))
 })

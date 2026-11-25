@@ -6,6 +6,7 @@ import { homeFor, routesFor } from './lib/routes'
 import type { RouteKey } from './lib/routes'
 import AdminPage from './pages/AdminPage'
 import BookingPage from './pages/BookingPage'
+import ChangePasswordPage from './pages/ChangePasswordPage'
 import CalendarPage from './pages/CalendarPage'
 import LoginPage from './pages/LoginPage'
 import MasterPage from './pages/MasterPage'
@@ -13,12 +14,20 @@ import MyGridPage from './pages/MyGridPage'
 import PendingPage from './pages/PendingPage'
 import RequestsPage from './pages/RequestsPage'
 
-function Guard({ need, children }: { need: 'anon' | 'pending' | 'active'; children: ReactNode }) {
+function Guard({ need, children }: { need: 'anon' | 'pending' | 'change' | 'active'; children: ReactNode }) {
   const { profile, session, loading } = useAuth()
   if (loading) return <p className="p-4">載入中…</p>
   const home = homeFor(session ? profile : null)
-  // A profile with no routes (pending, disabled, or active without a role) counts as 'pending'.
-  const state = !session || !profile ? 'anon' : routesFor(profile).length > 0 ? 'active' : 'pending'
+  // must_change_password only ever goes to /change-password. Otherwise a profile with no routes
+  // (pending, disabled, or active without a role) counts as 'pending'.
+  const state =
+    !session || !profile
+      ? 'anon'
+      : profile.status === 'active' && profile.must_change_password
+        ? 'change'
+        : routesFor(profile).length > 0
+          ? 'active'
+          : 'pending'
   if (state !== need) return <Navigate to={state === 'anon' && need !== 'anon' ? '/login' : home} replace />
   return <>{children}</>
 }
@@ -46,6 +55,7 @@ export function AppRoutes() {
   return (
         <Routes>
           <Route path="/login" element={<Guard need="anon"><LoginPage /></Guard>} />
+          <Route path="/change-password" element={<Guard need="change"><ChangePasswordPage /></Guard>} />
           <Route path="/pending" element={<Guard need="pending"><PendingPage /></Guard>} />
           <Route element={<Guard need="active"><Layout /></Guard>}>
             {PAGES.map(([k]) => (

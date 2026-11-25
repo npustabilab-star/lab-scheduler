@@ -4,7 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const h = vi.hoisted(() => ({
   tables: {} as Record<string, unknown[]>,
-  approveUser: vi.fn(),
+  createMember: vi.fn(),
+  resetMemberPassword: vi.fn(),
+  setNotifyEmail: vi.fn(),
   setMentor: vi.fn(),
   setAccountStatus: vi.fn(),
   setAdmin: vi.fn(),
@@ -15,7 +17,17 @@ const h = vi.hoisted(() => ({
   periodUpdates: [] as number[],
 }))
 
-vi.mock('../lib/api', () => ({ ...h }))
+vi.mock('../lib/api', async () => {
+  const { rpcErrorMessage } = await import('../lib/errors')
+  class AppError extends Error {
+    code: string
+    constructor(code: string) {
+      super(rpcErrorMessage(code))
+      this.code = code
+    }
+  }
+  return { ...h, AppError }
+})
 vi.mock('../lib/supabase', () => ({
   supabase: {
     from: (table: string) => {
@@ -42,38 +54,83 @@ vi.mock('../lib/supabase', () => ({
 }))
 vi.mock('../hooks/useTableChanges', () => ({ useTableChanges: () => undefined }))
 
+import { AppError } from '../lib/api'
 import AdminPage from './AdminPage'
 
-const grad = { id: 'g1', email: 'g@x', display_name: '學長', role: 'grad', status: 'active', is_admin: false, mentor_id: null }
-const newbie = { id: 'p1', email: 'n@x', display_name: '新人', role: null, status: 'pending', is_admin: false, mentor_id: null }
+const grad = { id: 'g1', email: 'g@x', display_name: '學長', role: 'grad', status: 'active', is_admin: false, mentor_id: null, student_id: 'b100', notify_email: null, must_change_password: false }
 
 beforeEach(() => {
   vi.clearAllMocks()
-  h.tables = { profiles: [grad, newbie], semesters: [], periods: [], no_class_days: [] }
-  h.approveUser.mockResolvedValue(undefined)
+  h.tables = { profiles: [grad], semesters: [], periods: [], no_class_days: [] }
+  h.createMember.mockResolvedValue(undefined)
+  h.resetMemberPassword.mockResolvedValue(undefined)
   h.failPeriod = 0
   h.semesterInsertError = null
   h.periodUpdates = []
 })
 
-describe('AdminPage approval form', () => {
-  it('requires a mentor for an undergrad and does not call approveUser without one', async () => {
+describe('AdminPage member creation', () => {
+  const open = async () => {
     const user = userEvent.setup()
     render(<AdminPage />)
-    await user.selectOptions(await screen.findByLabelText('角色'), 'undergrad')
+    await screen.findByRole('button', { name: '新增成員' })
+    return user
+  }
+
+  it('requires a mentor for an undergrad and does not call createMember without one', async () => {
+    const user = await open()
+    await user.type(screen.getByLabelText('學號'), 'B11234568')
+    await user.type(screen.getByLabelText('姓名'), '小明')
+    await user.selectOptions(screen.getByLabelText('身分'), 'undergrad')
     expect(screen.getByLabelText('指導研究生')).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: '核准' }))
+    await user.click(screen.getByRole('button', { name: '新增成員' }))
     expect(screen.getByRole('alert').textContent).toContain('請選擇指導研究生')
-    expect(h.approveUser).not.toHaveBeenCalled()
+    expect(h.createMember).not.toHaveBeenCalled()
   })
 
-  it('approves a grad without a mentor dropdown', async () => {
+  it('creates a grad without a mentor dropdown', async () => {
+    const user = await open()
+    await user.type(screen.getByLabelText('學號'), 'B11234567')
+    await user.type(screen.getByLabelText('姓名'), '王小明')
+    await user.selectOptions(screen.getByLabelText('身分'), 'grad')
+    expect(screen.queryByLabelText('指導研究生')).toBeNull()
+    await user.click(screen.getByRole('button', { name: '新增成員' }))
+    await waitFor(() =>
+      expect(h.createMember).toHaveBeenCalledWith({
+        student_id: 'B11234567', display_name: '王小明', role: 'grad', mentor_id: null, notify_email: null,
+      }),
+    )
+  })
+
+  it('shows the friendly message when the student id already exists', async () => {
+    h.createMember.mockRejectedValue(new AppError('STUDENT_ID_EXISTS'))
+    const user = await open()
+    await user.type(screen.getByLabelText('學號'), 'B11234567')
+    await user.type(screen.getByLabelText('姓名'), '王小明')
+    await user.selectOptions(screen.getByLabelText('身分'), 'grad')
+    await user.click(screen.getByRole('button', { name: '新增成員' }))
+    expect((await screen.findByRole('alert')).textContent).toContain('這個學號已經在名單中')
+  })
+})
+
+describe('AdminPage reset password', () => {
+  it('asks for confirmation then calls resetMemberPassword', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
     const user = userEvent.setup()
     render(<AdminPage />)
-    await user.selectOptions(await screen.findByLabelText('角色'), 'grad')
-    expect(screen.queryByLabelText('指導研究生')).toBeNull()
-    await user.click(screen.getByRole('button', { name: '核准' }))
-    await waitFor(() => expect(h.approveUser).toHaveBeenCalledWith('p1', 'grad', undefined))
+    await user.click(await screen.findByRole('button', { name: '重設密碼' }))
+    expect(confirm).toHaveBeenCalledWith('確定要把 學長 的密碼重設為學號後四碼？')
+    await waitFor(() => expect(h.resetMemberPassword).toHaveBeenCalledWith('g1'))
+    confirm.mockRestore()
+  })
+
+  it('does nothing when the confirmation is declined', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const user = userEvent.setup()
+    render(<AdminPage />)
+    await user.click(await screen.findByRole('button', { name: '重設密碼' }))
+    expect(h.resetMemberPassword).not.toHaveBeenCalled()
+    confirm.mockRestore()
   })
 })
 
