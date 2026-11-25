@@ -36,7 +36,13 @@ jobs:
           npx tsc -b
 
       - name: 連結 Supabase 專案
-        run: npx supabase link --project-ref "$PROJECT_REF"
+        run: |
+          npx supabase link --project-ref "$PROJECT_REF"
+          # GitHub runner 沒有 IPv6，改用 Supabase 的 IPv4 Session pooler（位址不含密碼，
+          # 密碼由 CLI 透過 access token 建立的臨時登入角色處理）。
+          # 位址來源：Dashboard → Connect → Session pooler；換地區或換專案時要一起改。
+          mkdir -p supabase/.temp
+          echo "postgresql://postgres.${PROJECT_REF}@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres" > supabase/.temp/pooler-url
 
       - name: 推送資料庫更新
         # 不帶 --password：讓 CLI 用 access token 走 Supabase 的登入通道（GitHub runner 連不到資料庫的 IPv6 直連位址）
